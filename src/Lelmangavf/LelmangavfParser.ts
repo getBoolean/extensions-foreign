@@ -250,7 +250,7 @@ export class LelmangavfParser {
     }
 
     isLastPage($: CheerioSelector): boolean {
-        return $('ul.pagination li').hasClass('disabled');
+        return $('ul.pagination li').last().hasClass('disabled');
     }
 
     decodeHTMLEntity(str: string): string {
