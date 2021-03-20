@@ -137,10 +137,10 @@ export class LelmangavfParser {
         const obj = JSON.parse(data)
 
         for(const entry of obj.suggestions) {
-            if(entry.value.toLowerCase().includes(search)) {
+            if(entry.value.toLowerCase().includes(search.toLowerCase)) {
                 const image = `${LM_DOMAIN}/uploads/manga/${entry.data}/cover/cover_250x350.jpg`
                 const title = entry.value
-
+                console.log(entry.value)
                 mangaTiles.push(createMangaTile({
                     id: entry.data,
                     title: createIconText({text: source.parseString(title)}),
