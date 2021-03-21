@@ -391,7 +391,7 @@ const headers = {
     referer: LM_DOMAIN
 };
 exports.LelmangavfInfo = {
-    version: '1.0.12',
+    version: '1.0.13',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -783,13 +783,14 @@ class LelmangavfParser {
     }
     parseSearchResults(query, data) {
         var _a, _b;
-        let mangaSuggestions = data['suggestions'];
+        const parsedJSON = JSON.parse(data);
+        const suggestions = parsedJSON['suggestions'];
         const mangaTiles = [];
-        for (let entry of mangaSuggestions) {
-            if ((entry.value).toLowerCase().includes((_b = (_a = query.title) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '')) {
-                const id = entry.data;
+        for (const manga of suggestions) {
+            if ((manga.value).toLowerCase().includes((_b = (_a = query.title) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '')) {
+                const id = manga.data;
                 const image = `${LM_DOMAIN}/uploads/manga/${id}/cover/cover_250x350.jpg`;
-                const title = entry.value;
+                const title = manga.value;
                 mangaTiles.push(createMangaTile({
                     id: id,
                     title: createIconText({ text: this.decodeHTMLEntity(title) }),
