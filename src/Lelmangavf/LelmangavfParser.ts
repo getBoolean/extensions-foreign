@@ -15,13 +15,19 @@ export class LelmangavfParser {
         const artist = $('.dl-horizontal dd:nth-child(8)').text().replace(/\r?\n|\r/g, '');
         const rating = Number($(".rating div[id='item-rating']").attr('data-score'));
         const status = $('.dl-horizontal dd:nth-child(8)').text().replace(/\r?\n|\r/g, '').trim() == 'Ongoing' ? MangaStatus.ONGOING : MangaStatus.COMPLETED;
-        const tagSections: TagSection[] = [createTagSection({ id: '0', label: 'genres', tags: [] })];
+        const arrayTags: Tag[] = []
+        let hentai = false;
 
         // Genres
-        const elems = $('.tag-links', table).children();
-        const genres: string[] = Array.from(elems, x=>$(x).text() );
-        tagSections[0].tags = genres.map((elem: string) => createTag({ id: elem, label: elem }));
-        const hentai = genres.includes('Mature') ? true : false;
+        $('.tag-links a', table).each((i, tag) => {
+            const label = $(tag).text()
+            const id = $(tag).attr('href')?.split('/').pop() ?? label
+            if (['Mature'].includes(label)) {
+                hentai = true;
+            }
+            arrayTags.push({ id: id, label: label })
+        })
+        const tagSections: TagSection[] = [createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => createTag(x)) })];
 
         // Date
         const dateModified = $('.chapters .date-chapter-title-rtl').first().text().trim() ?? '';
