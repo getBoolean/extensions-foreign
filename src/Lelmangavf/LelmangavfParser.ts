@@ -140,14 +140,15 @@ export class LelmangavfParser {
     }
 
     parseSearchResults(query: any, data: any): MangaTile[] {
-        let mangaSuggestions = data['suggestions']
+        const parsedJSON = JSON.parse(data)
+        const suggestions = parsedJSON['suggestions']
         const mangaTiles: MangaTile[] = []
 
-        for(let entry of mangaSuggestions) {
-            if((entry.value).toLowerCase().includes(query.title?.toLowerCase() ?? '')) {
-                const id = entry.data
+        for(const manga of suggestions) {
+            if((manga.value).toLowerCase().includes(query.title?.toLowerCase() ?? '')) {
+                const id = manga.data
                 const image = `${LM_DOMAIN}/uploads/manga/${id}/cover/cover_250x350.jpg`
-                const title = entry.value
+                const title = manga.value
                 mangaTiles.push(createMangaTile({
                     id: id,
                     title: createIconText({text: this.decodeHTMLEntity(title)}),
