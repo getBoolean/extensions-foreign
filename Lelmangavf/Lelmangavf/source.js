@@ -391,14 +391,14 @@ const headers = {
     referer: LM_DOMAIN
 };
 exports.LelmangavfInfo = {
-    version: '1.0.9',
+    version: '1.0.10',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
     authorWebsite: 'https://github.com/getBoolean',
-    description: 'Extension that pulls manga from BainianManga',
+    description: 'Extension that pulls manga from Lelmangavf',
     hentaiSource: false,
-    websiteBaseURL: `${LM_DOMAIN}/comic.html`,
+    websiteBaseURL: LM_DOMAIN,
     sourceTags: [
         {
             text: "Notifications",
@@ -484,18 +484,20 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
             }
         });
     }
-    searchRequest(query, _metadata) {
-        var _a;
+    searchRequest(query, metadata) {
+        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
-            let request = createRequestObject({
+            const request = createRequestObject({
                 url: `${LM_DOMAIN}/search`,
                 method,
             });
-            let response = yield this.requestManager.schedule(request, 1);
-            // let $ = this.cheerio.load(response.data)
-            let manga = this.parser.parseSearchResults(response.data, this, (_a = query.title) !== null && _a !== void 0 ? _a : '');
+            const response = yield this.requestManager.schedule(request, 1);
+            const $ = this.cheerio.load(response.data);
+            const manga = this.parser.parseSearchResults($, this, (_b = (_a = query.title) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '', response.data);
+            metadata = undefined;
             return createPagedResults({
                 results: manga,
+                metadata
             });
         });
     }
@@ -782,17 +784,24 @@ class LelmangavfParser {
             return { updates: foundIds, loadNextPage: false };
         }
     }
-    parseSearchResults(data, source, search) {
+    parseSearchResults($, source, search, data) {
+        console.log('in parseSearchResults()');
+        // let json = $('pre[style^="word-wrap"]').html() ?? ''
+        console.log('json found');
+        let obj = JSON.parse(data);
+        console.log('json parsed');
         const mangaTiles = [];
-        const obj = JSON.parse(data);
-        for (const entry of obj.suggestions) {
-            if (entry.value.toLowerCase().includes(search.toLowerCase())) {
+        console.log('looping over json values');
+        for (let entry of obj.suggestions) {
+            console.log(entry.value + ': ' + entry.data);
+            if ((entry.value).toLowerCase().includes(search)) {
                 const image = `${LM_DOMAIN}/uploads/manga/${entry.data}/cover/cover_250x350.jpg`;
                 const title = entry.value;
-                console.log(entry.value);
+                console.log('   Found: ' + entry.value + ': ' + entry.data);
                 mangaTiles.push(createMangaTile({
                     id: entry.data,
                     title: createIconText({ text: source.parseString(title) }),
+                    subtitleText: createIconText({ text: '' }),
                     image: image
                 }));
             }
@@ -801,12 +810,14 @@ class LelmangavfParser {
         return mangaTiles;
     }
     parseTags($) {
-        const tagSections = [createTagSection({ id: '0', label: 'genres', tags: [] })];
-        const allItems = $('.tag-links a').toArray();
-        for (const item of allItems) {
-            const label = $(item).text().trim();
-            tagSections[0].tags.push(createTag({ id: label, label: label }));
-        }
+        const arrayTags = [];
+        $('.tag-links a').each((i, tag) => {
+            var _a, _b;
+            const label = $(tag).text().trim();
+            const id = (_b = (_a = $(tag).attr('href')) === null || _a === void 0 ? void 0 : _a.split('/').pop()) !== null && _b !== void 0 ? _b : label;
+            arrayTags.push({ id: id, label: label });
+        });
+        const tagSections = [createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => createTag(x)) })];
         return tagSections;
     }
     parsePopularMangaTiles($) {
