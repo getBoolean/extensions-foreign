@@ -22,7 +22,7 @@ const headers = {
 };
 
 export const LelmangavfInfo: SourceInfo = {
-    version: '1.0.13',
+    version: '1.0.14',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -157,7 +157,6 @@ export class Lelmangavf extends Source {
 
 
     async getHomePageSections(sectionCallback: (section: HomeSection) => void): Promise<void> {
-        this.collectedIds = []
         const sectionsRequests = [
             {
                 request: createRequestObject({
@@ -213,6 +212,7 @@ export class Lelmangavf extends Source {
                             sectionRequest.section.items = this.parser.parseAllMangaTiles($);
                             break;
                         case 'recentUpdates':
+                            this.collectedIds = []
                             let data = this.parser.parseLatestMangaTiles($, this.collectedIds);
                             sectionRequest.section.items = data[0]
                             this.collectedIds = data[1]
