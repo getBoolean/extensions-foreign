@@ -391,7 +391,7 @@ const headers = {
     referer: LM_DOMAIN
 };
 exports.LelmangavfInfo = {
-    version: '1.0.13',
+    version: '1.0.14',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -511,7 +511,6 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
     }
     getHomePageSections(sectionCallback) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.collectedIds = [];
             const sectionsRequests = [
                 {
                     request: createRequestObject({
@@ -562,6 +561,7 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
                             sectionRequest.section.items = this.parser.parseAllMangaTiles($);
                             break;
                         case 'recentUpdates':
+                            this.collectedIds = [];
                             let data = this.parser.parseLatestMangaTiles($, this.collectedIds);
                             sectionRequest.section.items = data[0];
                             this.collectedIds = data[1];
@@ -639,7 +639,7 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
             time = new Date();
             time.setDate(time.getDate() - 1);
         }
-        else if (isNaN(Number(timeAgo))) { // Today
+        else if (timeAgo.match(/^([^0-9]*)$/)) { // Today (no numbers)
             time = new Date(Date.now());
         }
         else {
