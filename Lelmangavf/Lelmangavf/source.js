@@ -789,10 +789,11 @@ class LelmangavfParser {
         const mangaTiles = [];
         for (let entry of mangaSuggestions) {
             if ((entry.value).toLowerCase().includes((_b = (_a = query.title) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '')) {
-                const image = `${LM_DOMAIN}/uploads/manga/${entry.data}/cover/cover_250x350.jpg`;
+                const id = entry.data;
+                const image = `${LM_DOMAIN}/uploads/manga/${id}/cover/cover_250x350.jpg`;
                 const title = entry.value;
                 mangaTiles.push(createMangaTile({
-                    id: entry.data,
+                    id: id,
                     title: createIconText({ text: this.decodeHTMLEntity(title) }),
                     subtitleText: createIconText({ text: '' }),
                     image: image
