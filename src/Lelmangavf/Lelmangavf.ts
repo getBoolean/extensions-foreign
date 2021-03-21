@@ -22,14 +22,14 @@ const headers = {
 };
 
 export const LelmangavfInfo: SourceInfo = {
-    version: '1.0.9',
+    version: '1.0.10',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
     authorWebsite: 'https://github.com/getBoolean',
-    description: 'Extension that pulls manga from BainianManga',
+    description: 'Extension that pulls manga from Lelmangavf',
     hentaiSource: false,
-    websiteBaseURL: `${LM_DOMAIN}/comic.html`,
+    websiteBaseURL: LM_DOMAIN,
     sourceTags: [
         {
             text: "Notifications",
