@@ -492,12 +492,12 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
                 method,
             });
             const response = yield this.requestManager.schedule(request, 1);
-            const $ = this.cheerio.load(response.data);
-            const manga = this.parser.parseSearchResults($, this, (_b = (_a = query.title) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '', response.data);
-            metadata = undefined;
+            // const $ = this.cheerio.load(response.data)
+            const manga = this.parser.parseSearchResults(/*$, */ this, (_b = (_a = query.title) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '', response.data);
+            // metadata = undefined
             return createPagedResults({
                 results: manga,
-                metadata
+                // metadata
             });
         });
     }
@@ -784,15 +784,15 @@ class LelmangavfParser {
             return { updates: foundIds, loadNextPage: false };
         }
     }
-    parseSearchResults($, source, search, data) {
+    parseSearchResults(/*$: CheerioSelector, */ source, search, data) {
         console.log('in parseSearchResults()');
         // let json = $('pre[style^="word-wrap"]').html() ?? ''
         console.log('json found');
-        let obj = JSON.parse(data);
+        let mangaSuggestions = JSON.parse(data)['suggestions'];
         console.log('json parsed');
         const mangaTiles = [];
         console.log('looping over json values');
-        for (let entry of obj.suggestions) {
+        for (let entry of mangaSuggestions) {
             console.log(entry.value + ': ' + entry.data);
             if ((entry.value).toLowerCase().includes(search)) {
                 const image = `${LM_DOMAIN}/uploads/manga/${entry.data}/cover/cover_250x350.jpg`;
