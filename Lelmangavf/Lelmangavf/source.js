@@ -391,7 +391,7 @@ const headers = {
     referer: LM_DOMAIN
 };
 exports.LelmangavfInfo = {
-    version: '1.0.10',
+    version: '1.0.11',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -485,7 +485,6 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
         });
     }
     searchRequest(query, metadata) {
-        var _a, _b;
         return __awaiter(this, void 0, void 0, function* () {
             const request = createRequestObject({
                 url: `${LM_DOMAIN}/search`,
@@ -493,11 +492,11 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
             });
             const response = yield this.requestManager.schedule(request, 1);
             // const $ = this.cheerio.load(response.data)
-            const manga = this.parser.parseSearchResults(/*$, */ this, (_b = (_a = query.title) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '', response.data);
-            // metadata = undefined
+            const manga = this.parser.parseSearchResults(query, response.data);
+            metadata = undefined;
             return createPagedResults({
                 results: manga,
-                // metadata
+                metadata
             });
         });
     }
@@ -784,29 +783,22 @@ class LelmangavfParser {
             return { updates: foundIds, loadNextPage: false };
         }
     }
-    parseSearchResults(/*$: CheerioSelector, */ source, search, data) {
-        console.log('in parseSearchResults()');
-        // let json = $('pre[style^="word-wrap"]').html() ?? ''
-        console.log('json found');
-        let mangaSuggestions = JSON.parse(data)['suggestions'];
-        console.log('json parsed');
+    parseSearchResults(query, data) {
+        var _a, _b;
+        let mangaSuggestions = data['suggestions'];
         const mangaTiles = [];
-        console.log('looping over json values');
         for (let entry of mangaSuggestions) {
-            console.log(entry.value + ': ' + entry.data);
-            if ((entry.value).toLowerCase().includes(search)) {
+            if ((entry.value).toLowerCase().includes((_b = (_a = query.title) === null || _a === void 0 ? void 0 : _a.toLowerCase()) !== null && _b !== void 0 ? _b : '')) {
                 const image = `${LM_DOMAIN}/uploads/manga/${entry.data}/cover/cover_250x350.jpg`;
                 const title = entry.value;
-                console.log('   Found: ' + entry.value + ': ' + entry.data);
                 mangaTiles.push(createMangaTile({
                     id: entry.data,
-                    title: createIconText({ text: source.parseString(title) }),
+                    title: createIconText({ text: this.decodeHTMLEntity(title) }),
                     subtitleText: createIconText({ text: '' }),
                     image: image
                 }));
             }
         }
-        console.log(mangaTiles);
         return mangaTiles;
     }
     parseTags($) {
