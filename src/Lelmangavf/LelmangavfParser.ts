@@ -19,6 +19,24 @@ export class LelmangavfParser {
         const arrayTags: Tag[] = []
         let hentai = false;
 
+        // Categories
+        const tableElements = $('.dl-horizontal').children().toArray()
+        const tableElementsText = tableElements.map(x => $(x).text().trim())
+        
+        if (tableElementsText.indexOf('Catégories') !== -1) {
+            const categoryIndex = tableElementsText.indexOf('Catégories') + 1
+            const categories = $(tableElements[categoryIndex]).find('a').toArray()
+
+            for (const category of categories) {
+                const label = $(category).text()
+                const id = $(category).attr('href')?.split('/').pop() ?? label
+                if (['Mature'].includes(label)) {
+                    hentai = true;
+                }
+                arrayTags.push({ id: id, label: label })
+            }
+        }
+
         // Genres
         $('.tag-links a', table).each((i, tag) => {
             const label = $(tag).text()
@@ -26,8 +44,11 @@ export class LelmangavfParser {
             if (['Mature'].includes(label)) {
                 hentai = true;
             }
-            arrayTags.push({ id: id, label: label })
+            if (!arrayTags.includes({ id: id, label: label })) {
+                arrayTags.push({ id: id, label: label })
+            }
         })
+
         const tagSections: TagSection[] = [createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => createTag(x)) })];
 
         // Date
@@ -165,10 +186,23 @@ export class LelmangavfParser {
 
         const arrayTags: Tag[] = []
 
+        // Categories
+        const categories = $('.list-category li').toArray()
+
+        for (const category of categories) {
+            const label = $(category).text()
+            const id = $(category).attr('href')?.split('/').pop() ?? label
+            arrayTags.push({ id: id, label: label })
+        }
+
+        // Genres
         $('.tag-links a').each((i, tag) => {
             const label = $(tag).text().trim()
             const id = $(tag).attr('href')?.split('/').pop() ?? label
-            arrayTags.push({ id: id, label: label })
+            if (!arrayTags.includes({ id: id, label: label })) {
+                arrayTags.push({ id: id, label: label })
+            }
+            
         })
         const tagSections: TagSection[] = [createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => createTag(x)) })];
 
