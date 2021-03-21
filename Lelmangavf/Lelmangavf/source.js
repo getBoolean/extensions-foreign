@@ -391,7 +391,7 @@ const headers = {
     referer: LM_DOMAIN
 };
 exports.LelmangavfInfo = {
-    version: '1.0.14',
+    version: '1.0.18',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -635,7 +635,11 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
     }
     convertTime(timeAgo) {
         let time;
-        if (timeAgo.includes('Hier')) { // Yesterday
+        if (timeAgo.includes('/')) {
+            const dateParts = timeAgo.split("/");
+            timeAgo = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`;
+        }
+        if (timeAgo === 'Hier') { // Yesterday
             time = new Date();
             time.setDate(time.getDate() - 1);
         }
@@ -659,7 +663,7 @@ const Languages_1 = require("./Languages");
 const LM_DOMAIN = 'https://www.lelmangavf.com';
 class LelmangavfParser {
     parseMangaDetails($, mangaId) {
-        var _a, _b, _c;
+        var _a, _b, _c, _d, _e;
         const panel = $('.row').first();
         const table = $('.dl-horizontal', panel).first();
         const title = (_a = $('.widget-title', panel).first().text()) !== null && _a !== void 0 ? _a : 'No title';
@@ -671,6 +675,21 @@ class LelmangavfParser {
         const status = $('.dl-horizontal dd:nth-child(8)').text().replace(/\r?\n|\r/g, '').trim() == 'Ongoing' ? paperback_extensions_common_1.MangaStatus.ONGOING : paperback_extensions_common_1.MangaStatus.COMPLETED;
         const arrayTags = [];
         let hentai = false;
+        // Categories
+        const tableElements = $('.dl-horizontal').children().toArray();
+        const tableElementsText = tableElements.map(x => $(x).text().trim());
+        if (tableElementsText.indexOf('Catégories') !== -1) {
+            const categoryIndex = tableElementsText.indexOf('Catégories') + 1;
+            const categories = $(tableElements[categoryIndex]).find('a').toArray();
+            for (const category of categories) {
+                const label = $(category).text();
+                const id = (_d = (_c = $(category).attr('href')) === null || _c === void 0 ? void 0 : _c.split('/').pop()) !== null && _d !== void 0 ? _d : label;
+                if (['Mature'].includes(label)) {
+                    hentai = true;
+                }
+                arrayTags.push({ id: id, label: label });
+            }
+        }
         // Genres
         $('.tag-links a', table).each((i, tag) => {
             var _a, _b;
@@ -679,11 +698,13 @@ class LelmangavfParser {
             if (['Mature'].includes(label)) {
                 hentai = true;
             }
-            arrayTags.push({ id: id, label: label });
+            if (!arrayTags.includes({ id: id, label: label })) {
+                arrayTags.push({ id: id, label: label });
+            }
         });
         const tagSections = [createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => createTag(x)) })];
         // Date
-        const dateModified = (_c = $('.chapters .date-chapter-title-rtl').first().text().trim()) !== null && _c !== void 0 ? _c : '';
+        const dateModified = (_e = $('.chapters .date-chapter-title-rtl').first().text().trim()) !== null && _e !== void 0 ? _e : '';
         const time = new Date(dateModified);
         const lastUpdate = time.toDateString();
         // Alt Titles
@@ -802,12 +823,23 @@ class LelmangavfParser {
         return mangaTiles;
     }
     parseTags($) {
+        var _a, _b;
         const arrayTags = [];
+        // Categories
+        const categories = $('.list-category li').toArray();
+        for (const category of categories) {
+            const label = $(category).text();
+            const id = (_b = (_a = $(category).attr('href')) === null || _a === void 0 ? void 0 : _a.split('/').pop()) !== null && _b !== void 0 ? _b : label;
+            arrayTags.push({ id: id, label: label });
+        }
+        // Genres
         $('.tag-links a').each((i, tag) => {
             var _a, _b;
             const label = $(tag).text().trim();
             const id = (_b = (_a = $(tag).attr('href')) === null || _a === void 0 ? void 0 : _a.split('/').pop()) !== null && _b !== void 0 ? _b : label;
-            arrayTags.push({ id: id, label: label });
+            if (!arrayTags.includes({ id: id, label: label })) {
+                arrayTags.push({ id: id, label: label });
+            }
         });
         const tagSections = [createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => createTag(x)) })];
         return tagSections;
