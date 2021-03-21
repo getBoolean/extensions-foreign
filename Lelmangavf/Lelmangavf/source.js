@@ -391,7 +391,7 @@ const headers = {
     referer: LM_DOMAIN
 };
 exports.LelmangavfInfo = {
-    version: '1.0.11',
+    version: '1.0.12',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -484,7 +484,7 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
             }
         });
     }
-    searchRequest(query, metadata) {
+    searchRequest(query, _metadata) {
         return __awaiter(this, void 0, void 0, function* () {
             const request = createRequestObject({
                 url: `${LM_DOMAIN}/search`,
@@ -493,10 +493,8 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
             const response = yield this.requestManager.schedule(request, 1);
             // const $ = this.cheerio.load(response.data)
             const manga = this.parser.parseSearchResults(query, response.data);
-            metadata = undefined;
             return createPagedResults({
                 results: manga,
-                metadata
             });
         });
     }
