@@ -145,10 +145,11 @@ export class LelmangavfParser {
 
         for(let entry of mangaSuggestions) {
             if((entry.value).toLowerCase().includes(query.title?.toLowerCase() ?? '')) {
-                const image = `${LM_DOMAIN}/uploads/manga/${entry.data}/cover/cover_250x350.jpg`
+                const id = entry.data
+                const image = `${LM_DOMAIN}/uploads/manga/${id}/cover/cover_250x350.jpg`
                 const title = entry.value
                 mangaTiles.push(createMangaTile({
-                    id: entry.data,
+                    id: id,
                     title: createIconText({text: this.decodeHTMLEntity(title)}),
                     subtitleText: createIconText({text: ''}),
                     image: image
