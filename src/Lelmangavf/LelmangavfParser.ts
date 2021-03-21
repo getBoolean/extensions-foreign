@@ -161,13 +161,16 @@ export class LelmangavfParser {
 
     parseTags($: CheerioSelector): TagSection[] {
 
-        const tagSections: TagSection[] = [createTagSection({id: '0', label: 'genres', tags: []})]
+        const arrayTags: Tag[] = []
         
-        const allItems = $('.tag-links a').toArray()
-        for (const item of allItems) {
-            const label = $(item).text().trim()
-            tagSections[0].tags.push(createTag({id: label, label: label}))
-        }
+        $('.tag-links a').each((i, tag) => {
+            const label = $(tag).text().trim()
+            const id = $(tag).attr('href')?.split('/').pop() ?? label
+            arrayTags.push({ id: id, label: label })
+        })
+        const tagSections: TagSection[] = [createTagSection({ id: '0', label: 'genres', tags: arrayTags.map(x => createTag(x)) })];
+
+
         return tagSections
     }
 
