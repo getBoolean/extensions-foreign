@@ -15,7 +15,7 @@ describe('Lelmangavf Tests', function () {
      * Try to choose a manga which is updated frequently, so that the historical checking test can 
      * return proper results, as it is limited to searching 30 days back due to extremely long processing times otherwise.
      */
-    var mangaId = "one-piece";
+    var mangaId = "edens-zero";
 
     it("Retrieve Manga Details", async () => {
         let details = await wrapper.getMangaDetails(source, mangaId);
@@ -55,21 +55,21 @@ describe('Lelmangavf Tests', function () {
         expect(data.pages, "No pages present").to.be.not.empty;
     })
 
-     it("Testing search", async () => {
-         let testSearch = createSearchRequest({
-             title: 'the'
-         });
+    //  it("Testing search", async () => {
+    //      let testSearch = createSearchRequest({
+    //          title: 'the'
+    //      });
 
-         let search = await wrapper.searchRequest(source, testSearch, 1);
-         let result = search.results[0];
+    //      let search = await wrapper.searchRequest(source, testSearch, 1);
+    //      let result = search.results[0];
 
-         expect(result, "No response from server").to.exist;
+    //      expect(result, "No response from server").to.exist;
 
-         expect(result.id, "No ID found for search query").to.be.not.empty;
-         expect(result.image, "No image found for search").to.be.not.empty;
-         expect(result.title, "No title").to.be.not.null;
-         expect(result.subtitleText, "No subtitle text").to.be.not.null;
-    })
+    //      expect(result.id, "No ID found for search query").to.be.not.empty;
+    //      expect(result.image, "No image found for search").to.be.not.empty;
+    //      expect(result.title, "No title").to.be.not.null;
+    //      expect(result.subtitleText, "No subtitle text").to.be.not.null;
+    // })
 
     it("Testing Home-Page aquisition", async() => {
         let homePages = await wrapper.getHomePageSections(source)
@@ -86,18 +86,18 @@ describe('Lelmangavf Tests', function () {
     })
 
     it("Testing view more", async () => {
-        let data = await wrapper.getViewMoreItems(source, 'zAll', {page: null}) 
-        expect(data, "No server response").to.exist;
-        expect(data, "Empty server response").to.not.be.empty;
+        let data1 = await wrapper.getViewMoreItems(source, 'recentUpdates', {page: null}) 
+        expect(data1, "No server response").to.exist;
+        expect(data1, "Empty server response").to.not.be.empty;
      })
 
 
-    // it("Testing Notifications", async () => {
-    //     let updates = await wrapper.filterUpdatedManga(source, new Date("19/3/2021"), [mangaId])
-    //     expect(updates, "No server response").to.exist
-    //     expect(updates, "Empty server response").to.not.be.empty
-    //     expect(updates[0], "No updates").to.not.be.empty;
-    // })
+    it("Testing Notifications", async () => {
+        let updates = await wrapper.filterUpdatedManga(source, new Date("3/19/2021"), [mangaId])
+        expect(updates, "No server response").to.exist
+        expect(updates, "Empty server response").to.not.be.empty
+        expect(updates[0], "No updates").to.not.be.empty;
+    })
 
     
 })
