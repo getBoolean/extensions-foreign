@@ -297,7 +297,7 @@ export class Lelmangavf extends Source {
         if (timeAgo.includes('Hier')) { // Yesterday
             time = new Date()
             time.setDate(time.getDate() - 1);
-        } else if (isNaN(Number(timeAgo))) { // Today
+        } else if (timeAgo.match(/^([^0-9]*)$/)) { // Today (no numbers)
             time = new Date(Date.now())
         } else {
             time = new Date(timeAgo)
