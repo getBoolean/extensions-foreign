@@ -139,31 +139,23 @@ export class LelmangavfParser {
 
     }
 
-    parseSearchResults(/*$: CheerioSelector, */source: any, search: string, data: any): MangaTile[] {
-        console.log('in parseSearchResults()')
-        // let json = $('pre[style^="word-wrap"]').html() ?? ''
-        console.log('json found')
-        let mangaSuggestions = JSON.parse(data)['suggestions']
-        console.log('json parsed')
+    parseSearchResults(query: any, data: any): MangaTile[] {
+        let mangaSuggestions = data['suggestions']
         const mangaTiles: MangaTile[] = []
 
-        console.log('looping over json values')
         for(let entry of mangaSuggestions) {
-            console.log(entry.value + ': ' + entry.data)
-            if((entry.value).toLowerCase().includes(search)) {
+            if((entry.value).toLowerCase().includes(query.title?.toLowerCase() ?? '')) {
                 const image = `${LM_DOMAIN}/uploads/manga/${entry.data}/cover/cover_250x350.jpg`
                 const title = entry.value
-                console.log('   Found: ' + entry.value + ': ' + entry.data)
                 mangaTiles.push(createMangaTile({
                     id: entry.data,
-                    title: createIconText({text: source.parseString(title)}),
+                    title: createIconText({text: this.decodeHTMLEntity(title)}),
                     subtitleText: createIconText({text: ''}),
                     image: image
                 }))
             }
         }
 
-        console.log(mangaTiles)
         return mangaTiles
     }
 

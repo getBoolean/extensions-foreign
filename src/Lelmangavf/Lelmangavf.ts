@@ -22,7 +22,7 @@ const headers = {
 };
 
 export const LelmangavfInfo: SourceInfo = {
-    version: '1.0.10',
+    version: '1.0.11',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -134,12 +134,12 @@ export class Lelmangavf extends Source {
         })
         const response = await this.requestManager.schedule(request, 1)
         // const $ = this.cheerio.load(response.data)
-        const manga = this.parser.parseSearchResults(/*$, */this, query.title?.toLowerCase() ?? '', response.data)
-        // metadata = undefined
+        const manga = this.parser.parseSearchResults(query, response.data)
+        metadata = undefined
 
         return createPagedResults({
             results: manga,
-            // metadata
+            metadata
         })
 
     }
