@@ -22,7 +22,7 @@ const headers = {
 };
 
 export const LelmangavfInfo: SourceInfo = {
-    version: '1.0.14',
+    version: '1.0.18',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -294,7 +294,13 @@ export class Lelmangavf extends Source {
 
     protected convertTime(timeAgo: string): Date {
         let time: Date
-        if (timeAgo.includes('Hier')) { // Yesterday
+
+        if (timeAgo.includes('/')) {
+            const dateParts = timeAgo.split("/");
+            timeAgo = `${dateParts[2]}/${dateParts[1]}/${dateParts[0]}`
+        }
+
+        if (timeAgo === 'Hier') { // Yesterday
             time = new Date()
             time.setDate(time.getDate() - 1);
         } else if (timeAgo.match(/^([^0-9]*)$/)) { // Today (no numbers)
