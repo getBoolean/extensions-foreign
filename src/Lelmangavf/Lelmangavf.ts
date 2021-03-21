@@ -127,17 +127,19 @@ export class Lelmangavf extends Source {
         }
     }
 
-    async searchRequest(query: SearchRequest, _metadata: any): Promise<PagedResults> {
-        let request = createRequestObject({
+    async searchRequest(query: SearchRequest, metadata: any): Promise<PagedResults> {
+        const request = createRequestObject({
             url: `${LM_DOMAIN}/search`,
             method,
         })
-        let response = await this.requestManager.schedule(request, 1)
-        // let $ = this.cheerio.load(response.data)
-        let manga = this.parser.parseSearchResults(response.data, this, query.title ?? '')
+        const response = await this.requestManager.schedule(request, 1)
+        const $ = this.cheerio.load(response.data)
+        const manga = this.parser.parseSearchResults($, this, query.title?.toLowerCase() ?? '', response.data)
+        metadata = undefined
 
         return createPagedResults({
             results: manga,
+            metadata
         })
 
     }
