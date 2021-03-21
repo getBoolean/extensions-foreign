@@ -22,7 +22,7 @@ const headers = {
 };
 
 export const LelmangavfInfo: SourceInfo = {
-    version: '1.0.11',
+    version: '1.0.12',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -127,7 +127,7 @@ export class Lelmangavf extends Source {
         }
     }
 
-    async searchRequest(query: SearchRequest, metadata: any): Promise<PagedResults> {
+    async searchRequest(query: SearchRequest, _metadata: any): Promise<PagedResults> {
         const request = createRequestObject({
             url: `${LM_DOMAIN}/search`,
             method,
@@ -135,11 +135,9 @@ export class Lelmangavf extends Source {
         const response = await this.requestManager.schedule(request, 1)
         // const $ = this.cheerio.load(response.data)
         const manga = this.parser.parseSearchResults(query, response.data)
-        metadata = undefined
 
         return createPagedResults({
             results: manga,
-            metadata
         })
 
     }
