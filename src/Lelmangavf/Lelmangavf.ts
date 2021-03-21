@@ -133,13 +133,13 @@ export class Lelmangavf extends Source {
             method,
         })
         const response = await this.requestManager.schedule(request, 1)
-        const $ = this.cheerio.load(response.data)
-        const manga = this.parser.parseSearchResults($, this, query.title?.toLowerCase() ?? '', response.data)
-        metadata = undefined
+        // const $ = this.cheerio.load(response.data)
+        const manga = this.parser.parseSearchResults(/*$, */this, query.title?.toLowerCase() ?? '', response.data)
+        // metadata = undefined
 
         return createPagedResults({
             results: manga,
-            metadata
+            // metadata
         })
 
     }

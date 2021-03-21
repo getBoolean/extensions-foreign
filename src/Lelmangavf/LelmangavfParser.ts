@@ -2,6 +2,7 @@ import {Chapter, Manga, MangaStatus, MangaTile, Tag, TagSection, SearchRequest} 
 import {reverseLangCode} from "./Languages"
 
 const LM_DOMAIN = 'https://www.lelmangavf.com';
+
 export class LelmangavfParser {
 
 
@@ -138,16 +139,16 @@ export class LelmangavfParser {
 
     }
 
-    parseSearchResults($: CheerioSelector, source: any, search: string, data: any): MangaTile[] {
+    parseSearchResults(/*$: CheerioSelector, */source: any, search: string, data: any): MangaTile[] {
         console.log('in parseSearchResults()')
         // let json = $('pre[style^="word-wrap"]').html() ?? ''
         console.log('json found')
-        let obj = JSON.parse(data)
+        let mangaSuggestions = JSON.parse(data)['suggestions']
         console.log('json parsed')
         const mangaTiles: MangaTile[] = []
 
         console.log('looping over json values')
-        for(let entry of obj.suggestions) {
+        for(let entry of mangaSuggestions) {
             console.log(entry.value + ': ' + entry.data)
             if((entry.value).toLowerCase().includes(search)) {
                 const image = `${LM_DOMAIN}/uploads/manga/${entry.data}/cover/cover_250x350.jpg`
@@ -169,7 +170,7 @@ export class LelmangavfParser {
     parseTags($: CheerioSelector): TagSection[] {
 
         const arrayTags: Tag[] = []
-        
+
         $('.tag-links a').each((i, tag) => {
             const label = $(tag).text().trim()
             const id = $(tag).attr('href')?.split('/').pop() ?? label
