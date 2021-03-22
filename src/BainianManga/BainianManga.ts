@@ -22,15 +22,19 @@ import {
   };
   
   export const BainianMangaInfo: SourceInfo = {
-    version: '1.0.0',
+    version: '1.0.1',
     name: 'BainianManga (百年漫画)',
-    icon: 'favicon.ico',
+    icon: 'favicon.png',
     author: 'getBoolean',
     authorWebsite: 'https://github.com/getBoolean',
     description: 'Extension that pulls manga from BainianManga',
     hentaiSource: false,
     websiteBaseURL: `${BM_DOMAIN}/comic.html`,
     sourceTags: [
+        {
+            text: "Notifications",
+            type: TagType.GREEN
+        },
         {
             text: "中文",
             type: TagType.GREY
@@ -88,7 +92,7 @@ import {
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        const $ = this.cheerio.load(response.data)
+        // const $ = this.cheerio.load(response.data)
 
         return parseChapterDetails(this.imageDomain, mangaId, chapterId, response.data)
     }
