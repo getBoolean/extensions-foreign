@@ -22,7 +22,7 @@ const headers = {
 };
 
 export const LelmangavfInfo: SourceInfo = {
-    version: '1.0.18',
+    version: '1.0.19',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -265,7 +265,7 @@ export class Lelmangavf extends Source {
               manga = this.parser.parseAllMangaTiles($);
               break;
             case 'recentUpdates':
-              let result = this.parser.parseLatestMangaTiles($, this.collectedIds);
+              let result = this.parser.parseLatestMangaTiles($, this.collectedIds, page);
               manga = result[0]
               this.collectedIds = result[1]
               break;

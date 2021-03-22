@@ -269,9 +269,11 @@ export class LelmangavfParser {
     // Maintain a set as a class variable and reset it everytime 'getViewMoreItems'
     // is called with null metadata. Check it for duplicate ids
     // Loading the next page is temp disabled until this is fixed
-    parseLatestMangaTiles($: CheerioSelector, collectedIds: string[]): [MangaTile[], string[]] {
+    parseLatestMangaTiles($: CheerioSelector, collectedIds: string[], page: number): [MangaTile[], string[]] {
         const tiles: MangaTile[] = []
-
+        if (page === 1) {
+            collectedIds = []
+        }
         const panel = $('.mangalist');
         const allItems = $('.manga-item', panel).toArray();
         for (const item of allItems) {
