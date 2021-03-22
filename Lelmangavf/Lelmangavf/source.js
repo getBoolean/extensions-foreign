@@ -391,7 +391,7 @@ const headers = {
     referer: LM_DOMAIN
 };
 exports.LelmangavfInfo = {
-    version: '1.0.18',
+    version: '1.0.19',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
@@ -608,7 +608,7 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
                     manga = this.parser.parseAllMangaTiles($);
                     break;
                 case 'recentUpdates':
-                    let result = this.parser.parseLatestMangaTiles($, this.collectedIds);
+                    let result = this.parser.parseLatestMangaTiles($, this.collectedIds, page);
                     manga = result[0];
                     this.collectedIds = result[1];
                     break;
@@ -901,8 +901,11 @@ class LelmangavfParser {
     // Maintain a set as a class variable and reset it everytime 'getViewMoreItems'
     // is called with null metadata. Check it for duplicate ids
     // Loading the next page is temp disabled until this is fixed
-    parseLatestMangaTiles($, collectedIds) {
+    parseLatestMangaTiles($, collectedIds, page) {
         const tiles = [];
+        if (page === 1) {
+            collectedIds = [];
+        }
         const panel = $('.mangalist');
         const allItems = $('.manga-item', panel).toArray();
         for (const item of allItems) {
