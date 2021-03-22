@@ -345,7 +345,7 @@ const headers = {
     referer: BM_DOMAIN
 };
 exports.BainianMangaInfo = {
-    version: '1.0.2',
+    version: '1.1.0',
     name: 'BainianManga (百年漫画)',
     icon: 'favicon.png',
     author: 'getBoolean',
@@ -443,31 +443,64 @@ class BainianManga extends paperback_extensions_common_1.Source {
     getHomePageSections(sectionCallback) {
         return __awaiter(this, void 0, void 0, function* () {
             // Give Paperback a skeleton of what these home sections should look like to pre-render them
-            const section1 = createHomeSection({ id: 'a_recommended', title: '推荐漫画' });
-            const section3 = createHomeSection({ id: 'hot_comics', title: '热门漫画', view_more: true });
-            const section2 = createHomeSection({ id: 'z_new_updates', title: '最近更新', view_more: true });
-            // Fill the homsections with data
-            const request1 = createRequestObject({
-                url: `${BM_DOMAIN}/comic.html`,
-                method,
-            });
-            const request2 = createRequestObject({
-                url: `${BM_DOMAIN}/page/hot/1.html`,
-                method,
-            });
-            const request3 = createRequestObject({
-                url: `${BM_DOMAIN}/page/new/1.html`,
-                method,
-            });
-            const response1 = yield this.requestManager.schedule(request1, 1);
-            const $1 = this.cheerio.load(response1.data);
-            const response2 = yield this.requestManager.schedule(request2, 1);
-            const $2 = this.cheerio.load(response2.data);
-            const response3 = yield this.requestManager.schedule(request3, 1);
-            const $3 = this.cheerio.load(response3.data);
-            BainianMangaParser_1.parseHomeSections($1, section1, sectionCallback);
-            BainianMangaParser_1.parseHotManga($2, section2, sectionCallback);
-            BainianMangaParser_1.parseNewManga($3, section3, sectionCallback);
+            const sectionRequests = [
+                {
+                    request: createRequestObject({
+                        url: `${BM_DOMAIN}/comic.html`,
+                        method: 'GET'
+                    }),
+                    section: createHomeSection({
+                        id: 'a_recommended',
+                        title: '推荐漫画'
+                    }),
+                },
+                {
+                    request: createRequestObject({
+                        url: `${BM_DOMAIN}/page/hot/1.html`,
+                        method: 'GET'
+                    }),
+                    section: createHomeSection({
+                        id: 'hot_comics',
+                        title: '热门漫画',
+                        view_more: true,
+                    }),
+                },
+                {
+                    request: createRequestObject({
+                        url: `${BM_DOMAIN}/page/new/1.html`,
+                        method: 'GET'
+                    }),
+                    section: createHomeSection({
+                        id: 'z_new_updates',
+                        title: '最近更新',
+                        view_more: true
+                    }),
+                },
+            ];
+            const promises = [];
+            for (const sectionRequest of sectionRequests) {
+                // Let the app load empty sections
+                sectionCallback(sectionRequest.section);
+                // Get the section data
+                promises.push(this.requestManager.schedule(sectionRequest.request, 1).then(response => {
+                    const $ = this.cheerio.load(response.data);
+                    switch (sectionRequest.section.id) {
+                        case 'a_recommended':
+                            sectionRequest.section.items = BainianMangaParser_1.parseHomeSections($);
+                            break;
+                        case 'hot_comics':
+                            sectionRequest.section.items = BainianMangaParser_1.parseHotManga($);
+                            break;
+                        case 'z_new_updates':
+                            sectionRequest.section.items = BainianMangaParser_1.parseNewManga($);
+                            break;
+                        default:
+                    }
+                    sectionCallback(sectionRequest.section);
+                }));
+            }
+            // Make sure the function completes
+            yield Promise.all(promises);
         });
     }
     searchRequest(query, metadata) {
@@ -652,9 +685,8 @@ const parseUpdatedManga = ($, time, ids) => {
     };
 };
 exports.parseUpdatedManga = parseUpdatedManga;
-const parseHomeSections = ($, section, sectionCallback) => {
+const parseHomeSections = ($) => {
     var _a, _b, _c, _d;
-    sectionCallback(section);
     const recommendedManga = [];
     // Recommended
     const grid = $('.tbox_m')[0];
@@ -671,14 +703,11 @@ const parseHomeSections = ($, section, sectionCallback) => {
             subtitleText: createIconText({ text: subtitle })
         }));
     }
-    section.items = recommendedManga;
-    // Perform the callbacks again now that the home page sections are filled with data
-    sectionCallback(section);
+    return recommendedManga;
 };
 exports.parseHomeSections = parseHomeSections;
-const parseHotManga = ($, section, sectionCallback) => {
+const parseHotManga = ($) => {
     var _a, _b, _c, _d;
-    sectionCallback(section);
     const hotManga = [];
     // New
     const grid = $('.tbox_m')[0];
@@ -695,14 +724,11 @@ const parseHotManga = ($, section, sectionCallback) => {
             subtitleText: createIconText({ text: subtitle })
         }));
     }
-    section.items = hotManga;
-    // Perform the callbacks again now that the home page sections are filled with data
-    sectionCallback(section);
+    return hotManga;
 };
 exports.parseHotManga = parseHotManga;
-const parseNewManga = ($, section, sectionCallback) => {
+const parseNewManga = ($) => {
     var _a, _b, _c, _d;
-    sectionCallback(section);
     const newManga = [];
     // New
     const grid = $('.tbox_m')[0];
@@ -719,9 +745,7 @@ const parseNewManga = ($, section, sectionCallback) => {
             subtitleText: createIconText({ text: subtitle })
         }));
     }
-    section.items = newManga;
-    // Perform the callbacks again now that the home page sections are filled with data
-    sectionCallback(section);
+    return newManga;
 };
 exports.parseNewManga = parseNewManga;
 const generateSearch = (query) => {
