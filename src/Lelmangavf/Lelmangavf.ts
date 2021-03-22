@@ -22,7 +22,7 @@ const headers = {
 };
 
 export const LelmangavfInfo: SourceInfo = {
-    version: '1.0.19',
+    version: '2.0.0',
     name: 'Lelmangavf',
     icon: 'default_favicon.png',
     author: 'getBoolean',
