@@ -213,7 +213,7 @@ export class Lelmangavf extends Source {
                             break;
                         case 'recentUpdates':
                             this.collectedIds = []
-                            let data = this.parser.parseLatestMangaTiles($, this.collectedIds);
+                            let data = this.parser.parseLatestMangaTiles($, this.collectedIds, 1);
                             sectionRequest.section.items = data[0]
                             this.collectedIds = data[1]
                             break;
