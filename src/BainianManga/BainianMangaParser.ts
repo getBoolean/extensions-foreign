@@ -1,5 +1,7 @@
 import { Chapter, ChapterDetails, HomeSection, LanguageCode, Manga, MangaStatus, MangaTile, MangaUpdates, PagedResults, SearchRequest, TagSection } from "paperback-extensions-common";
 
+const ChineseNumber = require('./external/chinese-numbers.js');
+
 export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, string] => {
     const json = $('[type=application\\/ld\\+json]').html()?.replace(/\t*\n*/g, '') ?? ''
     const parsedJson = JSON.parse(json)
@@ -56,7 +58,8 @@ export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
     for (let chapter of allChapters) {
         const id: string = ( $('a', chapter).attr('href')?.split('/').pop() ?? '' ).replace('.html', '')
         const name: string = $('a', chapter).text() ?? ''
-        const chapNum: number = Number(name.match(/\d+/) ?? 0 )
+        const convertedString = new ChineseNumber(name).toArabicString();
+        const chapNum: number = Number(convertedString.match(/\d+/) ?? 0 )
         chapters.push(createChapter({
             id,
             mangaId,
@@ -123,8 +126,7 @@ export const parseUpdatedManga = ($: CheerioStatic, time: Date, ids: string[]): 
 }
 
 
-export const parseHomeSections = ($: CheerioStatic, section: HomeSection, sectionCallback: (section: HomeSection) => void): void => {
-    sectionCallback(section)
+export const parseHomeSections = ($: CheerioStatic): MangaTile[] => {
     const recommendedManga: MangaTile[] = []
 
     // Recommended
@@ -144,15 +146,11 @@ export const parseHomeSections = ($: CheerioStatic, section: HomeSection, sectio
         }))
     }
 
-    section.items = recommendedManga
-
-    // Perform the callbacks again now that the home page sections are filled with data
-    sectionCallback(section)
+    return recommendedManga
 }
 
 
-export const parseHotManga = ($: CheerioStatic, section: HomeSection, sectionCallback: (section: HomeSection) => void): void => {
-    sectionCallback(section)
+export const parseHotManga = ($: CheerioStatic): MangaTile[] => {
     const hotManga: MangaTile[] = []
 
     // New
@@ -172,15 +170,11 @@ export const parseHotManga = ($: CheerioStatic, section: HomeSection, sectionCal
         }))
     }
 
-    section.items = hotManga
-
-    // Perform the callbacks again now that the home page sections are filled with data
-    sectionCallback(section)
+    return hotManga
 }
 
 
-export const parseNewManga = ($: CheerioStatic, section: HomeSection, sectionCallback: (section: HomeSection) => void): void => {
-    sectionCallback(section)
+export const parseNewManga = ($: CheerioStatic): MangaTile[] => {
     const newManga: MangaTile[] = []
 
     // New
@@ -200,10 +194,7 @@ export const parseNewManga = ($: CheerioStatic, section: HomeSection, sectionCal
         }))
     }
 
-    section.items = newManga
-
-    // Perform the callbacks again now that the home page sections are filled with data
-    sectionCallback(section)
+    return newManga
 }
 
 
