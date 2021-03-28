@@ -285,7 +285,7 @@ export class Lelmangavf extends Source {
         })
     }
 
-    cloudflareBypassRequest() {
+    getCloudflareBypassRequest() {
         return createRequestObject({
             url: `${LM_DOMAIN}`,
             method,
