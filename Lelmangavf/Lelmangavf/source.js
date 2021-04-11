@@ -627,7 +627,7 @@ class Lelmangavf extends paperback_extensions_common_1.Source {
             });
         });
     }
-    getCloudflareBypassRequest() {
+    cloudflareBypassRequest() {
         return createRequestObject({
             url: `${LM_DOMAIN}`,
             method,
