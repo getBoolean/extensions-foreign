@@ -7,7 +7,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
     const parsedJson = JSON.parse(json)
 
     const infoElement = $('div.data')
-    const title : string = parsedJson.title
+    const title : string = parsedJson.title.replace('漫画免费阅读全集-百年漫画', '')
     const image : string = parsedJson.images[0]
     let author = $('.dir', infoElement).text().trim().replace('作者：', '')
     let artist = ''
