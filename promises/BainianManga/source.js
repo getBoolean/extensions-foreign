@@ -583,7 +583,7 @@ const parseMangaDetails = ($, mangaId) => {
     const json = (_b = (_a = $('[type=application\\/ld\\+json]').html()) === null || _a === void 0 ? void 0 : _a.replace(/\t*\n*/g, '')) !== null && _b !== void 0 ? _b : '';
     const parsedJson = JSON.parse(json);
     const infoElement = $('div.data');
-    const title = parsedJson.title;
+    const title = parsedJson.title.replace('漫画免费阅读全集-百年漫画', '');
     const image = parsedJson.images[0];
     let author = $('.dir', infoElement).text().trim().replace('作者：', '');
     let artist = '';
