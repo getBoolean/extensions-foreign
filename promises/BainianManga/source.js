@@ -339,13 +339,12 @@ exports.BainianManga = exports.BainianMangaInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const BainianMangaParser_1 = require("./BainianMangaParser");
 const BM_DOMAIN = 'https://m.bnmanhua.com';
-const BM_IMAGE_DOMAIN = 'https://img.lxhy88.com';
 const method = 'GET';
 const headers = {
     referer: BM_DOMAIN
 };
 exports.BainianMangaInfo = {
-    version: '1.1.0',
+    version: '1.1.2',
     name: 'BainianManga (百年漫画)',
     icon: 'favicon.png',
     author: 'getBoolean',
@@ -365,14 +364,9 @@ exports.BainianMangaInfo = {
     ]
 };
 class BainianManga extends paperback_extensions_common_1.Source {
-    constructor() {
-        super(...arguments);
-        this.imageDomain = BM_IMAGE_DOMAIN;
-    }
     getMangaShareUrl(mangaId) { return `${BM_DOMAIN}/comic/${mangaId}`; }
     getMangaDetails(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
-            this.imageDomain = BM_IMAGE_DOMAIN; // Reset image domain back to this
             const request = createRequestObject({
                 url: `${BM_DOMAIN}/comic/`,
                 method,
@@ -381,12 +375,6 @@ class BainianManga extends paperback_extensions_common_1.Source {
             const response = yield this.requestManager.schedule(request, 1);
             const $ = this.cheerio.load(response.data);
             let result = BainianMangaParser_1.parseMangaDetails($, mangaId);
-            // Hacky solution to get the image domain
-            // Get image domain from (ex:) https://img.lxhy88.com/zhang/26110/1602252/d41ae644ddcd2e1edb8141f0b5abf8c1.jpg
-            const image = result[1].replace('https://', '').replace('http://', '');
-            const tempImageDomain = image.substring(0, image.indexOf('/')); // Set new image domain
-            this.imageDomain = `https://${tempImageDomain}`;
-            // console.log(this.imageDomain)
             return result[0];
         });
     }
@@ -787,7 +775,6 @@ const parseTags = ($) => {
         tags: []
     });
     for (let item of allItems) {
-        // let id = ($(item).attr('href')?.split('/').pop() ?? '').replace('.html', '')
         let label = $(item).text();
         genres.tags.push(createTag({ id: label, label: label }));
     }
@@ -796,7 +783,7 @@ const parseTags = ($) => {
 exports.parseTags = parseTags;
 const parseViewMore = ($) => {
     var _a, _b, _c, _d;
-    // console.log('parseViewMore($)')
+    console.log('parseViewMore($)');
     const panel = $('.tbox_m');
     const allItems = $('.vbox', panel).toArray();
     const manga = [];
@@ -816,9 +803,8 @@ const parseViewMore = ($) => {
 };
 exports.parseViewMore = parseViewMore;
 const isLastPage = ($) => {
-    // const pagenav = $('.pagination')
-    let disabled = $('li', $('.pagination')).last().hasClass('disabled');
-    return disabled;
+    // see if the button is disabled
+    return $('li', $('.pagination')).last().hasClass('disabled');
 };
 exports.isLastPage = isLastPage;
 
