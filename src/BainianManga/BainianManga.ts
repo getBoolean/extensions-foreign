@@ -15,14 +15,13 @@ import {
   import { generateSearch, isLastPage, parseChapterDetails, parseChapters, parseHomeSections, parseHotManga, parseNewManga, parseMangaDetails, parseSearch, parseTags, parseUpdatedManga, parseViewMore, UpdatedManga } from "./BainianMangaParser"
   
   const BM_DOMAIN = 'https://m.bnmanhua.com';
-  const BM_IMAGE_DOMAIN = 'https://img.lxhy88.com'
   const method = 'GET';
   const headers = {
       referer: BM_DOMAIN
   };
   
   export const BainianMangaInfo: SourceInfo = {
-    version: '1.1.0',
+    version: '1.1.2',
     name: 'BainianManga (百年漫画)',
     icon: 'favicon.png',
     author: 'getBoolean',
@@ -44,10 +43,8 @@ import {
   
   export class BainianManga extends Source {
     getMangaShareUrl(mangaId: string): string | null { return `${BM_DOMAIN}/comic/${mangaId}` }
-    private imageDomain = BM_IMAGE_DOMAIN
   
     async getMangaDetails(mangaId: string): Promise<Manga> {
-        this.imageDomain = BM_IMAGE_DOMAIN // Reset image domain back to this
         const request = createRequestObject({
             url: `${BM_DOMAIN}/comic/`,
             method,
@@ -58,13 +55,6 @@ import {
         const $ = this.cheerio.load(response.data)
 
         let result : [Manga, string] = parseMangaDetails($, mangaId)
-
-        // Hacky solution to get the image domain
-        // Get image domain from (ex:) https://img.lxhy88.com/zhang/26110/1602252/d41ae644ddcd2e1edb8141f0b5abf8c1.jpg
-        const image = result[1].replace('https://', '').replace('http://', '')
-        const tempImageDomain = image.substring(0, image.indexOf('/')) // Set new image domain
-        this.imageDomain = `https://${tempImageDomain}`
-        // console.log(this.imageDomain)
 
         return result[0]
     }

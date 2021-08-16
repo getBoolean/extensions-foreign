@@ -240,7 +240,6 @@ export const parseTags = ($: CheerioStatic): TagSection[] | null => {
         tags: []
     })
     for (let item of allItems) {
-        // let id = ($(item).attr('href')?.split('/').pop() ?? '').replace('.html', '')
         let label = $(item).text()
         genres.tags.push(createTag({ id: label, label: label }))
     }
@@ -249,7 +248,7 @@ export const parseTags = ($: CheerioStatic): TagSection[] | null => {
 
 
 export const parseViewMore = ($: CheerioStatic): MangaTile[] => {
-    // console.log('parseViewMore($)')
+    console.log('parseViewMore($)')
     const panel = $('.tbox_m')
     const allItems = $('.vbox', panel).toArray()
     const manga: MangaTile[] = []
@@ -271,8 +270,6 @@ export const parseViewMore = ($: CheerioStatic): MangaTile[] => {
 
 
 export const isLastPage = ($: CheerioStatic): boolean => {
-    // const pagenav = $('.pagination')
-    let disabled = $('li', $('.pagination')).last().hasClass('disabled')
-
-    return disabled
+    // see if the button is disabled
+    return $('li', $('.pagination')).last().hasClass('disabled');
 }
