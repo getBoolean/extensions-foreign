@@ -567,6 +567,7 @@ exports.isLastPage = exports.parseViewMore = exports.parseTags = exports.parseSe
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 // TODO: Remove before publishing
 // const ChineseNumber = require('./external/chinese-numbers.js');
+// TODO: Replace with minimized version before publishing
 const LZString = require('./external/lz-string.js');
 const parseMangaDetails = ($, mangaId) => {
     var _a, _b, _c;
