@@ -586,17 +586,26 @@ const parseMangaDetails = ($, mangaId) => {
     // "已完结" -> COMPLETED
     // "連載中" -> ONGOING
     // "已完結" -> COMPLETED
-    // TODO: Add traditional chinese versions of text
-    let status = $('li.status span span', bookDetails).first().text() == '连载中' ? paperback_extensions_common_1.MangaStatus.ONGOING : paperback_extensions_common_1.MangaStatus.COMPLETED;
+    let statusText = $('li.status span span', bookDetails).first().text();
+    let status;
+    if (statusText == '连载中' || statusText == '連載中')
+        status = paperback_extensions_common_1.MangaStatus.ONGOING;
+    else if (statusText == '已完结' || statusText == '已完結')
+        status = paperback_extensions_common_1.MangaStatus.COMPLETED;
     let titles = isChineseTitleEmpty ? [title] : [title, altTitle];
     let follows = 0;
     let views = 0;
     let lastUpdate = $('li.status span span:nth-child(3)', bookDetails).text();
     let hentai = false;
     const tagSections = [createTagSection({ id: '0', label: 'genres', tags: [] })];
-    // TODO: Add genres
-    const elems = $('.yac', infoElement).find('a').toArray();
-    tagSections[0].tags = elems.map((elem) => createTag({ id: $(elem).text(), label: $(elem).text() }));
+    const elems = $("span:contains(漫画剧情) > a , span:contains(漫畫劇情) > a").toArray();
+    tagSections[0].tags = elems.map((elem) => {
+        var _a, _b;
+        return createTag({
+            id: ((_a = $(elem).attr('href')) !== null && _a !== void 0 ? _a : '').replace('/list/', '').replace('/', ''),
+            label: (_b = $(elem).attr('title')) !== null && _b !== void 0 ? _b : ''
+        });
+    });
     const time = new Date(lastUpdate);
     lastUpdate = time.toDateString();
     const summary = $('div#intro-all').text().trim();
