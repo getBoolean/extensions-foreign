@@ -25,7 +25,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
     let status : MangaStatus;
     if (statusText == '连载中' || statusText == '連載中')
         status = MangaStatus.ONGOING;
-    else if (statusText == '已完结' || statusText == '已完結')
+    else
         status = MangaStatus.COMPLETED;
 
     let titles = isChineseTitleEmpty ? [title] : [title, altTitle];
