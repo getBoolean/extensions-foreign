@@ -375,7 +375,6 @@ class ManHuaGui extends paperback_extensions_common_1.Source {
             });
             const response = yield this.requestManager.schedule(request, 1);
             const $ = this.cheerio.load(response.data);
-            // TODO: Add option to use Chinese titles when available
             return ManHuaGuiParser_1.parseMangaDetails($, mangaId);
         });
     }
@@ -571,11 +570,9 @@ const parseMangaDetails = ($, mangaId) => {
     var _a, _b, _c;
     const page = (_a = $('div.w998.bc.cf')) !== null && _a !== void 0 ? _a : '';
     const infoBox = $('div.book-cont', page);
-    const chineseTitle = $('div.book-title h2', infoBox).text();
-    const englishTitle = $('div.book-title h1', infoBox).text();
-    const isChineseTitleEmpty = chineseTitle.length == 0;
-    const title = isChineseTitleEmpty ? englishTitle : chineseTitle;
-    const altTitle = isChineseTitleEmpty ? '' : englishTitle;
+    const title = $('div.book-title h1', infoBox).text();
+    const altTitle = $('div.book-title h2', infoBox).text();
+    const isAltTitleEmpty = altTitle.length == 0;
     const image = (_b = $('div.book-cover p.hcover img', infoBox).attr('src')) !== null && _b !== void 0 ? _b : '';
     const bookDetails = $('div.book-detail ul.detail-list', infoBox);
     let author = (_c = $('li:nth-child(2) span:nth-child(2) a', bookDetails).attr('title')) !== null && _c !== void 0 ? _c : '';
@@ -591,7 +588,7 @@ const parseMangaDetails = ($, mangaId) => {
         status = paperback_extensions_common_1.MangaStatus.ONGOING;
     else
         status = paperback_extensions_common_1.MangaStatus.COMPLETED;
-    let titles = isChineseTitleEmpty ? [title] : [title, altTitle];
+    let titles = isAltTitleEmpty ? [title] : [title, altTitle];
     let follows = 0;
     let views = 0;
     let lastUpdate = $('li.status span span:nth-child(3)', bookDetails).text();
@@ -631,6 +628,11 @@ const parseChapters = ($, mangaId) => {
     const chapterList = $("ul > li > a.status0");
     const allChapters = chapterList.toArray();
     const chapters = [];
+    // Try to get R18 manga hidden chapter list
+    // let hiddenEncryptedChapterList = $("#__VIEWSTATE");
+    // if (hiddenEncryptedChapterList != null) {
+    //     // Hidden chapter list is LZString encoded
+    // }
     for (let chapter of allChapters) {
         const id = ((_c = (_b = $(chapter).attr("href")) === null || _b === void 0 ? void 0 : _b.split('/').pop()) !== null && _c !== void 0 ? _c : '').replace('.html', '');
         const name = (_e = (_d = $(chapter).attr("title")) === null || _d === void 0 ? void 0 : _d.trim()) !== null && _e !== void 0 ? _e : '';
