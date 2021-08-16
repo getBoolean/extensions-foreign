@@ -21,8 +21,13 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
     // "已完结" -> COMPLETED
     // "連載中" -> ONGOING
     // "已完結" -> COMPLETED
-    // TODO: Add traditional chinese versions of text
-    let status = $('li.status span span', bookDetails).first().text() == '连载中' ? MangaStatus.ONGOING : MangaStatus.COMPLETED
+    let statusText : string = $('li.status span span', bookDetails).first().text();
+    let status : MangaStatus;
+    if (statusText == '连载中' || statusText == '連載中')
+        status = MangaStatus.ONGOING;
+    else if (statusText == '已完结' || statusText == '已完結')
+        status = MangaStatus.COMPLETED;
+
     let titles = isChineseTitleEmpty ? [title] : [title, altTitle];
     let follows = 0
     let views = 0
@@ -31,9 +36,10 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
 
     const tagSections: TagSection[] = [createTagSection({ id: '0', label: 'genres', tags: [] })]
     
-    // TODO: Add genres
-    const elems = $('.yac', infoElement).find('a').toArray()
-    tagSections[0].tags = elems.map((elem) => createTag({ id: $(elem).text(), label: $(elem).text() }))
+    const elems = $("span:contains(漫画剧情) > a , span:contains(漫畫劇情) > a").toArray()
+    tagSections[0].tags = elems.map((elem) => createTag({ 
+        id: ($(elem).attr('href') ?? '').replace('/list/', '').replace('/', ''),
+        label: $(elem).attr('title') ?? '' }))
 
     const time = new Date(lastUpdate)
     lastUpdate = time.toDateString()
