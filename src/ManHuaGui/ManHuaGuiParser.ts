@@ -65,18 +65,20 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): Manga => {
 
 
 export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
-    const json = $('[type=application\\/ld\\+json]').html()?.replace(/\t*\n*/g, '') ?? ''
-    const parsedJson = JSON.parse(json)
-    const time = new Date(parsedJson.upDate) // Set time for all chapters to be the last updated time
+    const page = $('div.w998.bc.cf') ?? '';
 
-    const allChapters = $('li', '.list_block ').toArray()
-    const chapters: Chapter[] = []
+    const chapterList = $("ul > li > a.status0");
+    const allChapters = chapterList.toArray()
+    const chapters: Chapter[] = [];
     
     for (let chapter of allChapters) {
-        const id: string = ( $('a', chapter).attr('href')?.split('/').pop() ?? '' ).replace('.html', '')
-        const name: string = $('a', chapter).text() ?? ''
+        const id: string = ( $(chapter).attr("href")?.split('/').pop() ?? '' ).replace('.html', '')
+        const name: string = $(chapter).attr("title")?.trim() ?? ''
         const convertedString = new ChineseNumber(name).toArabicString();
         const chapNum: number = Number(convertedString.match(/\d+/) ?? 0 )
+        // Manhuagui only provides upload date for latest chapter
+        const timeText : string = $('li.status span span:nth-child(3)', page).text()
+        const time = new Date(timeText)
         chapters.push(createChapter({
             id,
             mangaId,

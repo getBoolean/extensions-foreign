@@ -62,9 +62,9 @@ import {
 
     async getChapters(mangaId: string): Promise<Chapter[]> {
         const request = createRequestObject({
-            url: `${BM_DOMAIN}/comic/`,
+            url: `${BG_DOMAIN}/comic/`,
             method,
-            param: `${mangaId}.html`
+            param: `${mangaId}/`
         })
 
         const response = await this.requestManager.schedule(request, 1)
@@ -252,7 +252,7 @@ import {
 
     globalRequestHeaders(): RequestHeaders {
         return {
-            referer: BM_DOMAIN
+            referer: BG_DOMAIN
         }
     }
   }
