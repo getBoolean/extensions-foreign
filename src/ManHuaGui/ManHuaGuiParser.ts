@@ -2,6 +2,7 @@ import { Chapter, ChapterDetails, HomeSection, LanguageCode, Manga, MangaStatus,
 
 // TODO: Remove before publishing
 // const ChineseNumber = require('./external/chinese-numbers.js');
+// TODO: Replace with minimized version before publishing
 const LZString = require('./external/lz-string.js');
 
 export const parseMangaDetails = ($: CheerioStatic, mangaId: string): Manga => {
