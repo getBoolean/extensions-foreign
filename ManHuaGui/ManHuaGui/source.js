@@ -590,7 +590,7 @@ const parseMangaDetails = ($, mangaId) => {
     let status;
     if (statusText == '连载中' || statusText == '連載中')
         status = paperback_extensions_common_1.MangaStatus.ONGOING;
-    else if (statusText == '已完结' || statusText == '已完結')
+    else
         status = paperback_extensions_common_1.MangaStatus.COMPLETED;
     let titles = isChineseTitleEmpty ? [title] : [title, altTitle];
     let follows = 0;
