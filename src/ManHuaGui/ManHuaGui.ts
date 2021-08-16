@@ -55,7 +55,6 @@ import {
         const response = await this.requestManager.schedule(request, 1)
         const $ = this.cheerio.load(response.data)
 
-        // TODO: Add option to use Chinese titles when available
         return parseMangaDetails($, mangaId)
     }
   

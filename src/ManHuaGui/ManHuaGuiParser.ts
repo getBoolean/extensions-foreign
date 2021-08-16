@@ -5,11 +5,9 @@ const ChineseNumber = require('./external/chinese-numbers.js');
 export const parseMangaDetails = ($: CheerioStatic, mangaId: string): Manga => {
     const page = $('div.w998.bc.cf') ?? '';
     const infoBox = $('div.book-cont', page);
-    const chineseTitle : string = $('div.book-title h2', infoBox).text();
-    const englishTitle : string = $('div.book-title h1', infoBox).text();
-    const isChineseTitleEmpty : boolean = chineseTitle.length == 0;
-    const title : string = isChineseTitleEmpty ? englishTitle : chineseTitle;
-    const altTitle : string = isChineseTitleEmpty ? '' : englishTitle;
+    const title : string = $('div.book-title h1', infoBox).text();
+    const altTitle : string = $('div.book-title h2', infoBox).text();
+    const isAltTitleEmpty : boolean = altTitle.length == 0;
     const image : string = $('div.book-cover p.hcover img', infoBox).attr('src') ?? '';
 
     const bookDetails = $('div.book-detail ul.detail-list', infoBox);
@@ -28,7 +26,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): Manga => {
     else
         status = MangaStatus.COMPLETED;
 
-    let titles = isChineseTitleEmpty ? [title] : [title, altTitle];
+    let titles = isAltTitleEmpty ? [title] : [title, altTitle];
     let follows = 0
     let views = 0
     let lastUpdate = $('li.status span span:nth-child(3)', bookDetails).text()
@@ -70,6 +68,13 @@ export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
     const chapterList = $("ul > li > a.status0");
     const allChapters = chapterList.toArray()
     const chapters: Chapter[] = [];
+
+    // Try to get R18 manga hidden chapter list
+    // let hiddenEncryptedChapterList = $("#__VIEWSTATE");
+    // if (hiddenEncryptedChapterList != null) {
+    //     // Hidden chapter list is LZString encoded
+
+    // }
     
     for (let chapter of allChapters) {
         const id: string = ( $(chapter).attr("href")?.split('/').pop() ?? '' ).replace('.html', '')
