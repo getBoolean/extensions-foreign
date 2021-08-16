@@ -387,7 +387,7 @@ class ManHuaGui extends paperback_extensions_common_1.Source {
             });
             const response = yield this.requestManager.schedule(request, 1);
             const $ = this.cheerio.load(response.data);
-            return ManHuaGuiParser_1.parseChapters($, mangaId);
+            return ManHuaGuiParser_1.parseChapters(this.cheerio, $, mangaId);
         });
     }
     getChapterDetails(mangaId, chapterId) {
@@ -565,7 +565,9 @@ exports.ManHuaGui = ManHuaGui;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.isLastPage = exports.parseViewMore = exports.parseTags = exports.parseSearch = exports.generateSearch = exports.parseNewManga = exports.parseHotManga = exports.parseHomeSections = exports.parseUpdatedManga = exports.parseChapterDetails = exports.parseChapters = exports.parseMangaDetails = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
-const ChineseNumber = require('./external/chinese-numbers.js');
+// TODO: Remove before publishing
+// const ChineseNumber = require('./external/chinese-numbers.js');
+const LZString = require('./external/lz-string.js');
 const parseMangaDetails = ($, mangaId) => {
     var _a, _b, _c;
     const page = (_a = $('div.w998.bc.cf')) !== null && _a !== void 0 ? _a : '';
@@ -622,22 +624,28 @@ const parseMangaDetails = ($, mangaId) => {
     });
 };
 exports.parseMangaDetails = parseMangaDetails;
-const parseChapters = ($, mangaId) => {
-    var _a, _b, _c, _d, _e, _f;
+const parseChapters = (cheerio, $, mangaId) => {
+    var _a, _b, _c, _d, _e, _f, _g;
     const page = (_a = $('div.w998.bc.cf')) !== null && _a !== void 0 ? _a : '';
+    // Try to get R18 manga hidden chapter list
+    // Credit to tachiyomi for this impl
+    // https://github.com/tachiyomiorg/tachiyomi-extensions/blob/master/src/zh/manhuagui/src/eu/kanade/tachiyomi/extension/zh/manhuagui/Manhuagui.kt
+    const hiddenEncryptedChapterList = $("#__VIEWSTATE");
+    if (hiddenEncryptedChapterList != null) {
+        // Hidden chapter list is LZString encoded
+        const encryptedValue = (_b = $(hiddenEncryptedChapterList).attr('value')) !== null && _b !== void 0 ? _b : '';
+        const decodedHiddenChapterList = LZString.decompressFromBase64(encryptedValue);
+        $('#erroraudit_show', page).replaceWith(decodedHiddenChapterList);
+    }
     const chapterList = $("ul > li > a.status0");
     const allChapters = chapterList.toArray();
     const chapters = [];
-    // Try to get R18 manga hidden chapter list
-    // let hiddenEncryptedChapterList = $("#__VIEWSTATE");
-    // if (hiddenEncryptedChapterList != null) {
-    //     // Hidden chapter list is LZString encoded
-    // }
     for (let chapter of allChapters) {
-        const id = ((_c = (_b = $(chapter).attr("href")) === null || _b === void 0 ? void 0 : _b.split('/').pop()) !== null && _c !== void 0 ? _c : '').replace('.html', '');
-        const name = (_e = (_d = $(chapter).attr("title")) === null || _d === void 0 ? void 0 : _d.trim()) !== null && _e !== void 0 ? _e : '';
-        const convertedString = new ChineseNumber(name).toArabicString();
-        const chapNum = Number((_f = convertedString.match(/\d+/)) !== null && _f !== void 0 ? _f : 0);
+        const id = ((_d = (_c = $(chapter).attr("href")) === null || _c === void 0 ? void 0 : _c.split('/').pop()) !== null && _d !== void 0 ? _d : '').replace('.html', '');
+        const name = (_f = (_e = $(chapter).attr("title")) === null || _e === void 0 ? void 0 : _e.trim()) !== null && _f !== void 0 ? _f : '';
+        // Commented out since I haven't found any cases of chapter numbers written with chinese characters
+        // const convertedString = new ChineseNumber(name).toArabicString();
+        const chapNum = Number((_g = name.match(/\d+/)) !== null && _g !== void 0 ? _g : 0);
         // Manhuagui only provides upload date for latest chapter
         const timeText = $('li.status span span:nth-child(3)', page).text();
         const time = new Date(timeText);
@@ -832,473 +840,512 @@ const isLastPage = ($) => {
 };
 exports.isLastPage = isLastPage;
 
-},{"./external/chinese-numbers.js":28,"paperback-extensions-common":4}],28:[function(require,module,exports){
-const SINGLE_ARABIC_NUMBER_REGEX = /\d/;
+},{"./external/lz-string.js":28,"paperback-extensions-common":4}],28:[function(require,module,exports){
+// Copyright (c) 2013 Pieroxy <pieroxy@pieroxy.net>
+// This work is free. You can redistribute it and/or modify it
+// under the terms of the WTFPL, Version 2
+// For more information see LICENSE.txt or http://www.wtfpl.net/
+//
+// For more information, the home page:
+// http://pieroxy.net/blog/pages/lz-string/testing.html
+//
+// LZ-based compression algorithm, version 1.4.4
+var LZString = (function() {
 
-/**
- * Converter for Chinese numbers like 1000萬.
- * @param {string} source - The original number string, e.g. 1000萬.
- * @returns {ChineseNumber}
- * @constructor
- */
-var ChineseNumber = function (source) {
-  this.source = source;
-  return this;
-};
-
-/** Chinese number characters and their Arabic equivalent. */
-ChineseNumber.numbers = {
-  '零': 0,
-  '〇': 0,
-  '０': 0,
-  '洞': 0,
-
-  '壹': 1,
-  '一': 1,
-  '幺': 1,
-  '１': 1,
-
-  '貳': 2,
-  '贰': 2,
-  '二': 2,
-  '两': 2,
-  '兩': 2,
-  '倆': 2,
-  '俩': 2,
-  '２': 2,
-
-  // Outdated financial number variant which is commonly used as a normal word,
-  // which causes false positives:
-  // '參': 3,
-
-  '叁': 3,
-  '三': 3,
-  '仨': 3,
-  '３': 3,
-
-  '肆': 4,
-  '四': 4,
-  '４': 4,
-
-  '伍': 5,
-  '五': 5,
-  '５': 5,
-
-  '陸': 6,
-  '陆': 6,
-  '六': 6,
-  '６': 6,
-
-  '柒': 7,
-  '七': 7,
-  '拐': 7,
-  '７': 7,
-
-  '捌': 8,
-  '八': 8,
-  '８': 8,
-
-  '玖': 9,
-  '九': 9,
-  '勾': 9,
-  '９': 9,
-
-  '拾': '*10',
-  '十': '*10',
-  // '呀': '*10', // causes problems with casual "ah" at the end of sentence
-  '廿': '*20',
-  '卅': '*30',
-  '卌': '*40',
-  '佰': '*100',
-  '百': '*100',
-  '皕': '*200',
-  '仟': '*1000',
-  '千': '*1000',
-  '萬': '*10000',
-  '万': '*10000',
-  '億': '*100000000',
-  '亿': '*100000000',
-};
-ChineseNumber.characters = Object.keys(ChineseNumber.numbers);
-ChineseNumber.characterList = ChineseNumber.characters.join('');
-ChineseNumber.afterManMultipliers = ['萬', '万', '億', '亿'];
-
-/** 
- *  Matches Chinee numbers, Arabic numbers, and numbers that have no more than one space, dot or comma inside, like 3.45萬.
- *  It also ignores leading zeroes at the start of the number - see simplified demo here: https://regex101.com/r/7bPFy4/1
- */
-ChineseNumber.NUMBER_IN_STRING_REGEX = new RegExp('(?![0]+)(?:(?:\\d+(?:[.,\\s]\\d+)*)*)(?:[\\d' + ChineseNumber.characterList + ']+)', 'g');
-
-/** For converting strings like 8千3萬 into 8千3百萬. */
-ChineseNumber.reverseMultipliers = {
-  '10': '十',
-  '100': '百',
-  '1000': '千',
-  '10000': '萬',
-};
-
-/**
- * Returns the result of the conversion of Chinese number into an `Integer`.
- * @returns {number} The Chinese number converted to integer.
- */
-ChineseNumber.prototype.toInteger = function () {
-  var result = 0;
-  var pairs = [];
-  var str = this.source.toString();
-  var currentPair = [];
-
-  if (str === null || str === undefined || str === '') {
-    throw new Error('Empty strings cannot be converted.');
-  }
-
-  // Just a plain Arabic number was provided. Don't do any complicated stuff.
-  if (parseFloat(str).toString() === str.trim()) {
-    return parseFloat(str) || 0;
-  }
-
-  // If the string does not contain Chinese numbers (like "345 abc"), we don't
-  // have any business here:
-  let atLeastOneChineseNumber = false;
-  for (let character of str.split('')) {
-    if (ChineseNumber.characters.includes(character)) {
-      atLeastOneChineseNumber = true;
-      break;
-    }
-  }
-  if (!atLeastOneChineseNumber) {
-    return parseFloat(str) || 0;
-  }
-
-  str = str.replace(/[,\s]/g, ''); // remove commas, spaces
-
-  // Convert something like 8千3萬 into 8千3百萬 (8300*10000)
-  str = this.addMissingUnits(str);
-
-  // Here we will try to parse the leading part before the 萬 in numbers like
-  // 一百六十八萬, converting it into 168萬. The rest of the code will take care
-  // of the subsequent conversion. This must also work for numbers like 168萬5.
-  let maanLikeCharacterAtTheEnd = this.sourceStringEndsWithAfterManNumber(str);
-  if (maanLikeCharacterAtTheEnd) {
-    let maanLocation = str.lastIndexOf(maanLikeCharacterAtTheEnd);
-    let stringBeforeMaan = str.substring(0, maanLocation);
+    // private property
+    var f = String.fromCharCode;
+    var keyStrBase64 = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+    var keyStrUriSafe = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+-$";
+    var baseReverseDic = {};
     
-    let convertedNumberBeforeMaan;
-    if (stringBeforeMaan && stringBeforeMaan.trim()) {
-      convertedNumberBeforeMaan = new ChineseNumber(stringBeforeMaan).toInteger();
-    } else {
-      convertedNumberBeforeMaan = 1; // for cases like 萬五
-    }
-    
-    str = convertedNumberBeforeMaan.toString() + str.substr(maanLocation);
-
-    // If the number begins with Arabic numerals, parse and remove them first.
-    // Example: 83萬. This number will be multiplied by the remaining part at
-    // the end of the function.
-    // We're using parseFloat here instead of parseInt in order to have limited
-    // support for decimals, e.g. "3.5萬"
-    var leadingNumber = parseFloat(str);
-    if (!isNaN(leadingNumber)) {
-      str = str.replace(leadingNumber.toString(), '');
-    }
-  }
-
-  // Now parse the actual Chinese, character by character:
-  var len = str.length;
-  for (var i = 0; i < len; i++) {
-    if (str[i].match(SINGLE_ARABIC_NUMBER_REGEX)) {
-      // Just a normal arabic number. Add it to the pair.
-      currentPair.push(parseInt(str[i]));
-    }
-
-    if (ChineseNumber.numbers[str[i]] !== undefined) {
-      var arabic = ChineseNumber.numbers[str[i]]; // e.g. for '三', get 3
-
-      if (typeof (arabic) === 'number') {
-        if (currentPair.length !== 0) {
-          // E.g. case like 三〇〇三 instead of 三千...
-          // In this case, just concatenate the string, e.g. "2" + "0" = "20"
-          currentPair[0] = parseInt(currentPair[0].toString() + arabic.toString());
-        } else {
-          currentPair.push(arabic);
+    function getBaseValue(alphabet, character) {
+      if (!baseReverseDic[alphabet]) {
+        baseReverseDic[alphabet] = {};
+        for (var i=0 ; i<alphabet.length ; i++) {
+          baseReverseDic[alphabet][alphabet.charAt(i)] = i;
         }
-      } else if (typeof (arabic) === 'string' && arabic.startsWith('*')) {
-        // case like '*10000'
-        var action = arabic[0];
-
-        // remove '*' and convert to number
-        arabic = parseInt(arabic.replace('*', ''));
-
-        currentPair.push(arabic);
-
-        if (i === 0 && action === '*') {
-          // This is a case like 2千萬", where the first character will be 千,
-          // because "2" was cut off and stored in the leadingNumber:
-          currentPair.push(1);
-          pairs.push(currentPair);
-          currentPair = [];
+      }
+      return baseReverseDic[alphabet][character];
+    }
+    
+    var LZString = {
+      compressToBase64 : function (input) {
+        if (input == null) return "";
+        var res = LZString._compress(input, 6, function(a){return keyStrBase64.charAt(a);});
+        switch (res.length % 4) { // To produce valid Base64
+        default: // When could this happen ?
+        case 0 : return res;
+        case 1 : return res+"===";
+        case 2 : return res+"==";
+        case 3 : return res+"=";
+        }
+      },
+    
+      decompressFromBase64 : function (input) {
+        if (input == null) return "";
+        if (input == "") return null;
+        return LZString._decompress(input.length, 32, function(index) { return getBaseValue(keyStrBase64, input.charAt(index)); });
+      },
+    
+      compressToUTF16 : function (input) {
+        if (input == null) return "";
+        return LZString._compress(input, 15, function(a){return f(a+32);}) + " ";
+      },
+    
+      decompressFromUTF16: function (compressed) {
+        if (compressed == null) return "";
+        if (compressed == "") return null;
+        return LZString._decompress(compressed.length, 16384, function(index) { return compressed.charCodeAt(index) - 32; });
+      },
+    
+      //compress into uint8array (UCS-2 big endian format)
+      compressToUint8Array: function (uncompressed) {
+        var compressed = LZString.compress(uncompressed);
+        var buf=new Uint8Array(compressed.length*2); // 2 bytes per character
+    
+        for (var i=0, TotalLen=compressed.length; i<TotalLen; i++) {
+          var current_value = compressed.charCodeAt(i);
+          buf[i*2] = current_value >>> 8;
+          buf[i*2+1] = current_value % 256;
+        }
+        return buf;
+      },
+    
+      //decompress from uint8array (UCS-2 big endian format)
+      decompressFromUint8Array:function (compressed) {
+        if (compressed===null || compressed===undefined){
+            return LZString.decompress(compressed);
         } else {
-          // accumulated two parts of a pair which will be multiplied, e.g. 二 + 十
-          if (currentPair.length === 2) {
-            pairs.push(currentPair);
-            currentPair = [];
-          } else if (currentPair.length === 1) {
-            if (ChineseNumber.afterManMultipliers.indexOf(str[i]) !== -1) {
-              // For cases like '萬' in '一千萬' - multiply everything we had
-              // so far (like 一千) by the current digit (like 萬).
-              var numbersSoFar = 0;
-
-              pairs.forEach(function (pair) {
-                numbersSoFar += pair[0] * pair[1];
-              });
-
-              // The leadingNumber is for cases like 1000萬.
-              if (!isNaN(leadingNumber)) {
-                numbersSoFar *= leadingNumber;
-                leadingNumber = NaN;
-              }
-
-              // Replace all previous pairs with the new one:
-              pairs = [[numbersSoFar, arabic]]; // e.g. [[1000, 10000]]
-              currentPair = [];
-            } else {
-              // For cases like 十 in 十二:
-              currentPair.push(1);
-              pairs.push(currentPair);
-              currentPair = [];
+            var buf=new Array(compressed.length/2); // 2 bytes per character
+            for (var i=0, TotalLen=buf.length; i<TotalLen; i++) {
+              buf[i]=compressed[i*2]*256+compressed[i*2+1];
             }
+    
+            var result = [];
+            buf.forEach(function (c) {
+              result.push(f(c));
+            });
+            return LZString.decompress(result.join(''));
+    
+        }
+    
+      },
+    
+    
+      //compress into a string that is already URI encoded
+      compressToEncodedURIComponent: function (input) {
+        if (input == null) return "";
+        return LZString._compress(input, 6, function(a){return keyStrUriSafe.charAt(a);});
+      },
+    
+      //decompress from an output of compressToEncodedURIComponent
+      decompressFromEncodedURIComponent:function (input) {
+        if (input == null) return "";
+        if (input == "") return null;
+        input = input.replace(/ /g, "+");
+        return LZString._decompress(input.length, 32, function(index) { return getBaseValue(keyStrUriSafe, input.charAt(index)); });
+      },
+    
+      compress: function (uncompressed) {
+        return LZString._compress(uncompressed, 16, function(a){return f(a);});
+      },
+      _compress: function (uncompressed, bitsPerChar, getCharFromInt) {
+        if (uncompressed == null) return "";
+        var i, value,
+            context_dictionary= {},
+            context_dictionaryToCreate= {},
+            context_c="",
+            context_wc="",
+            context_w="",
+            context_enlargeIn= 2, // Compensate for the first entry which should not count
+            context_dictSize= 3,
+            context_numBits= 2,
+            context_data=[],
+            context_data_val=0,
+            context_data_position=0,
+            ii;
+    
+        for (ii = 0; ii < uncompressed.length; ii += 1) {
+          context_c = uncompressed.charAt(ii);
+          if (!Object.prototype.hasOwnProperty.call(context_dictionary,context_c)) {
+            context_dictionary[context_c] = context_dictSize++;
+            context_dictionaryToCreate[context_c] = true;
+          }
+    
+          context_wc = context_w + context_c;
+          if (Object.prototype.hasOwnProperty.call(context_dictionary,context_wc)) {
+            context_w = context_wc;
+          } else {
+            if (Object.prototype.hasOwnProperty.call(context_dictionaryToCreate,context_w)) {
+              if (context_w.charCodeAt(0)<256) {
+                for (i=0 ; i<context_numBits ; i++) {
+                  context_data_val = (context_data_val << 1);
+                  if (context_data_position == bitsPerChar-1) {
+                    context_data_position = 0;
+                    context_data.push(getCharFromInt(context_data_val));
+                    context_data_val = 0;
+                  } else {
+                    context_data_position++;
+                  }
+                }
+                value = context_w.charCodeAt(0);
+                for (i=0 ; i<8 ; i++) {
+                  context_data_val = (context_data_val << 1) | (value&1);
+                  if (context_data_position == bitsPerChar-1) {
+                    context_data_position = 0;
+                    context_data.push(getCharFromInt(context_data_val));
+                    context_data_val = 0;
+                  } else {
+                    context_data_position++;
+                  }
+                  value = value >> 1;
+                }
+              } else {
+                value = 1;
+                for (i=0 ; i<context_numBits ; i++) {
+                  context_data_val = (context_data_val << 1) | value;
+                  if (context_data_position ==bitsPerChar-1) {
+                    context_data_position = 0;
+                    context_data.push(getCharFromInt(context_data_val));
+                    context_data_val = 0;
+                  } else {
+                    context_data_position++;
+                  }
+                  value = 0;
+                }
+                value = context_w.charCodeAt(0);
+                for (i=0 ; i<16 ; i++) {
+                  context_data_val = (context_data_val << 1) | (value&1);
+                  if (context_data_position == bitsPerChar-1) {
+                    context_data_position = 0;
+                    context_data.push(getCharFromInt(context_data_val));
+                    context_data_val = 0;
+                  } else {
+                    context_data_position++;
+                  }
+                  value = value >> 1;
+                }
+              }
+              context_enlargeIn--;
+              if (context_enlargeIn == 0) {
+                context_enlargeIn = Math.pow(2, context_numBits);
+                context_numBits++;
+              }
+              delete context_dictionaryToCreate[context_w];
+            } else {
+              value = context_dictionary[context_w];
+              for (i=0 ; i<context_numBits ; i++) {
+                context_data_val = (context_data_val << 1) | (value&1);
+                if (context_data_position == bitsPerChar-1) {
+                  context_data_position = 0;
+                  context_data.push(getCharFromInt(context_data_val));
+                  context_data_val = 0;
+                } else {
+                  context_data_position++;
+                }
+                value = value >> 1;
+              }
+    
+    
+            }
+            context_enlargeIn--;
+            if (context_enlargeIn == 0) {
+              context_enlargeIn = Math.pow(2, context_numBits);
+              context_numBits++;
+            }
+            // Add wc to the dictionary.
+            context_dictionary[context_wc] = context_dictSize++;
+            context_w = String(context_c);
           }
         }
-      }
-    }
-  }
-
-  // If number ends in 1-9, e.g. 二十二, we have one number left behind -
-  // add it too and multiply by 1:
-  if (currentPair.length === 1) {
-    currentPair.push(1);
-    pairs.push(currentPair);
-  }
-
-  if (pairs.length > 0 && !isNaN(leadingNumber)) {
-    pairs[0][0] *= leadingNumber; // e.g. 83萬 => 83 * [10000, 1]
-  }
-
-  // Multiply all pairs:
-  pairs.forEach(function (pair) {
-    result += pair[0] * pair[1];
-  });
-
-  // For cases like 83萬
-  /*
-  if (!isNaN(leadingNumber)) {
-    if (pairs.length === 0) {
-      // later note: cases like "800 " should be already handled early in the code
-      result = leadingNumber; // otherwise multiplying by zero, e.g. "800 " => 0 * 800
-    } else {
-      result *= leadingNumber;
-    }
-  }
-  */
-
-  return result;
-};
-
-/**
- * Checks whether the character is part of a number (either a number itself, or
- * a space/comma), or a part of unrelated text.
- * @param {string} character - A string containing only one character to be
- *    checked.
- * @returns {boolean} True if the `character` is a Chinese or Arabic number
- *    or a character like "comma" and "space", which should not delimit two
- *    numbers; rather, they mean that the number may continue. E.g. "6,000" or
- *    "6 000".
- */
-ChineseNumber.isNumberOrSpace = function (character) {
-  // Make sure `character`.length is exactly 1:
-  if (character === null || character === undefined || character.length !== 1) {
-    throw new Error('isNumberOrSpace() must receive exactly one character for checking.');
-  }
-
-  // Check for Arabic numbers, commas and spaces:
-  if (character.match(/[0-9,.\s]/)) {
-    return true;
-  }
-
-  // Check if the character is on the list of Chinese number characters:
-  if (ChineseNumber.characters.indexOf(character) === -1) {
-    return false;
-  } else {
-    return true;
-  }
-};
-
-/**
- * Checks whether a character is a Chinese number character.
- * @param {number|string} A single character to be checked.
- * @returns {boolean} True if it's a Chinese number character or Chinese-style
- * Arabic numbers (０-９).
- */
-ChineseNumber.isChineseNumber = function (character) {
-  if (character === null || character === undefined || character.toString().length !== 1) {
-    throw new Error('Function isChineseNumber expects exactly one character.');
-  }
-
-  return ChineseNumber.characters.indexOf(character) !== -1;
-};
-
-/**
- * Checks whether a character is an Arabic number [0-9] and not a Chinese
- * number or another character.
- * @returns {boolean} True if character is from 0 to 9.
- */
-ChineseNumber.isArabicNumber = function (character) {
-  if (character === null || character === undefined || character.toString().length !== 1) {
-    throw new Error('Function isArabicNumber expects exactly one character.');
-  }
-
-  var arabicNumbers = '0123456789０１２３４５６７８９';
-  return arabicNumbers.indexOf(character) !== -1; // true if found
-};
-
-/**
- * Checks whether the character is a comma or space, i.e. a character that
- * can occur within a number (1,000,000) but is not a number itself.
- * @returns {boolean} True if the character is a comma or space.
- */
-ChineseNumber.isCommaOrSpace = function (character) {
-  if (character === null || character === undefined || character.toString().length !== 1) {
-    throw new Error('Function isCommaOrSpace expects exactly one character.');
-  }
-
-  var charactersWithinNumber = ',. ';
-
-  return charactersWithinNumber.indexOf(character) !== -1;
-};
-
-/**
- * Converts multiple Chinese numbers in a string into Arabic numbers, and
- * returns the translated string containing the original text but with Arabic
- * numbers only.
- * @param {number} [minimumCharactersInNumber] - Optionally, how many
- *    characters minimum must be in a number to be converted. Sometimes a
- *    good setting would be 2, because otherwise we will convert geographic
- *    names like 九龍站 into 9龍站.
- * @returns {string} The translated string with Arabic numbers only.
- */
-ChineseNumber.prototype.toArabicString = function (minimumCharactersInNumber) {
-  minimumCharactersInNumber = minimumCharactersInNumber || 1;
-
-  if (typeof this.source !== 'string') {
-    return this.source;
-  } else {
-    // Replace each number in the string with the tranlation. Before the
-    // translation, we remove spaces from the string for number like
-    // 4,000,000 and 4 000 000.
-    return this.source.replace(
-      ChineseNumber.NUMBER_IN_STRING_REGEX,
-      match => {
-        if (match.length >= minimumCharactersInNumber) {
-          return new ChineseNumber(match.replace(/[,\s]/g, '')).toInteger();
-        } else {
-          return match;
+    
+        // Output the code for w.
+        if (context_w !== "") {
+          if (Object.prototype.hasOwnProperty.call(context_dictionaryToCreate,context_w)) {
+            if (context_w.charCodeAt(0)<256) {
+              for (i=0 ; i<context_numBits ; i++) {
+                context_data_val = (context_data_val << 1);
+                if (context_data_position == bitsPerChar-1) {
+                  context_data_position = 0;
+                  context_data.push(getCharFromInt(context_data_val));
+                  context_data_val = 0;
+                } else {
+                  context_data_position++;
+                }
+              }
+              value = context_w.charCodeAt(0);
+              for (i=0 ; i<8 ; i++) {
+                context_data_val = (context_data_val << 1) | (value&1);
+                if (context_data_position == bitsPerChar-1) {
+                  context_data_position = 0;
+                  context_data.push(getCharFromInt(context_data_val));
+                  context_data_val = 0;
+                } else {
+                  context_data_position++;
+                }
+                value = value >> 1;
+              }
+            } else {
+              value = 1;
+              for (i=0 ; i<context_numBits ; i++) {
+                context_data_val = (context_data_val << 1) | value;
+                if (context_data_position == bitsPerChar-1) {
+                  context_data_position = 0;
+                  context_data.push(getCharFromInt(context_data_val));
+                  context_data_val = 0;
+                } else {
+                  context_data_position++;
+                }
+                value = 0;
+              }
+              value = context_w.charCodeAt(0);
+              for (i=0 ; i<16 ; i++) {
+                context_data_val = (context_data_val << 1) | (value&1);
+                if (context_data_position == bitsPerChar-1) {
+                  context_data_position = 0;
+                  context_data.push(getCharFromInt(context_data_val));
+                  context_data_val = 0;
+                } else {
+                  context_data_position++;
+                }
+                value = value >> 1;
+              }
+            }
+            context_enlargeIn--;
+            if (context_enlargeIn == 0) {
+              context_enlargeIn = Math.pow(2, context_numBits);
+              context_numBits++;
+            }
+            delete context_dictionaryToCreate[context_w];
+          } else {
+            value = context_dictionary[context_w];
+            for (i=0 ; i<context_numBits ; i++) {
+              context_data_val = (context_data_val << 1) | (value&1);
+              if (context_data_position == bitsPerChar-1) {
+                context_data_position = 0;
+                context_data.push(getCharFromInt(context_data_val));
+                context_data_val = 0;
+              } else {
+                context_data_position++;
+              }
+              value = value >> 1;
+            }
+    
+    
+          }
+          context_enlargeIn--;
+          if (context_enlargeIn == 0) {
+            context_enlargeIn = Math.pow(2, context_numBits);
+            context_numBits++;
+          }
         }
-      });
-  }
-};
-
-/**
- * Converts a string like 8千3萬 into 8千3百萬 (8300*10000).
- * @param {string} str - The original string.
- * @returns {string} The converted, expanded string.
- */
-ChineseNumber.prototype.addMissingUnits = function (str) {
-  var characters = str.split('');
-  var result = '';
-  var numbers = ChineseNumber.numbers;
-  var reverse = ChineseNumber.reverseMultipliers;
-
-  characters.forEach(function (character, i) {
-    if (i === 0) {
-      // For the first character, we don't have a previous character yet, so
-      // just skip it:
-      result += character;
-    } else {
-      var arabic = isNaN(character) ? numbers[character] : parseInt(character); // if it's already arabic, just use the arabic number
-      var previousNumber = numbers[characters[i - 1]] || characters[i - 1];
-      var previousCharacterAsMultiplier = reverse[previousNumber.toString().replace('*', '')] ? previousNumber.toString().replace('*', '') : undefined;
-      var nextCharacterArabic = (numbers[characters[i + 1]] || 0).toString().replace('*', '');
-
-      if (
-        // not a multiplier like '*100':
-        typeof arabic === 'number' &&
-
-        // in the 1-9 range:
-        arabic > 0 && arabic < 10 &&
-
-        // previous character is 10, 100, 1000 or 10000:
-        previousCharacterAsMultiplier !== undefined &&
-
-        // e.g. 1000 < 10000 for 8千3萬, or it's the last character in string:
-        (parseInt(previousCharacterAsMultiplier) < parseInt(nextCharacterArabic) || characters[i + 1] === undefined) &&
-
-        // For numbers like 十五, there are no other units to be appended at the end
-        previousCharacterAsMultiplier !== '10'
-      ) {
-        // E.g. for 8千3, add 百:
-        var oneOrderSmaller = (parseInt(previousCharacterAsMultiplier) / 10).toString();
-        var missingMultiplier = reverse[oneOrderSmaller];
-        result += character + missingMultiplier;
-      } else {
-        result += character;
+    
+        // Mark the end of the stream
+        value = 2;
+        for (i=0 ; i<context_numBits ; i++) {
+          context_data_val = (context_data_val << 1) | (value&1);
+          if (context_data_position == bitsPerChar-1) {
+            context_data_position = 0;
+            context_data.push(getCharFromInt(context_data_val));
+            context_data_val = 0;
+          } else {
+            context_data_position++;
+          }
+          value = value >> 1;
+        }
+    
+        // Flush the last char
+        while (true) {
+          context_data_val = (context_data_val << 1);
+          if (context_data_position == bitsPerChar-1) {
+            context_data.push(getCharFromInt(context_data_val));
+            break;
+          }
+          else context_data_position++;
+        }
+        return context_data.join('');
+      },
+    
+      decompress: function (compressed) {
+        if (compressed == null) return "";
+        if (compressed == "") return null;
+        return LZString._decompress(compressed.length, 32768, function(index) { return compressed.charCodeAt(index); });
+      },
+    
+      _decompress: function (length, resetValue, getNextValue) {
+        var dictionary = [],
+            next,
+            enlargeIn = 4,
+            dictSize = 4,
+            numBits = 3,
+            entry = "",
+            result = [],
+            i,
+            w,
+            bits, resb, maxpower, power,
+            c,
+            data = {val:getNextValue(0), position:resetValue, index:1};
+    
+        for (i = 0; i < 3; i += 1) {
+          dictionary[i] = i;
+        }
+    
+        bits = 0;
+        maxpower = Math.pow(2,2);
+        power=1;
+        while (power!=maxpower) {
+          resb = data.val & data.position;
+          data.position >>= 1;
+          if (data.position == 0) {
+            data.position = resetValue;
+            data.val = getNextValue(data.index++);
+          }
+          bits |= (resb>0 ? 1 : 0) * power;
+          power <<= 1;
+        }
+    
+        switch (next = bits) {
+          case 0:
+              bits = 0;
+              maxpower = Math.pow(2,8);
+              power=1;
+              while (power!=maxpower) {
+                resb = data.val & data.position;
+                data.position >>= 1;
+                if (data.position == 0) {
+                  data.position = resetValue;
+                  data.val = getNextValue(data.index++);
+                }
+                bits |= (resb>0 ? 1 : 0) * power;
+                power <<= 1;
+              }
+            c = f(bits);
+            break;
+          case 1:
+              bits = 0;
+              maxpower = Math.pow(2,16);
+              power=1;
+              while (power!=maxpower) {
+                resb = data.val & data.position;
+                data.position >>= 1;
+                if (data.position == 0) {
+                  data.position = resetValue;
+                  data.val = getNextValue(data.index++);
+                }
+                bits |= (resb>0 ? 1 : 0) * power;
+                power <<= 1;
+              }
+            c = f(bits);
+            break;
+          case 2:
+            return "";
+        }
+        dictionary[3] = c;
+        w = c;
+        result.push(c);
+        while (true) {
+          if (data.index > length) {
+            return "";
+          }
+    
+          bits = 0;
+          maxpower = Math.pow(2,numBits);
+          power=1;
+          while (power!=maxpower) {
+            resb = data.val & data.position;
+            data.position >>= 1;
+            if (data.position == 0) {
+              data.position = resetValue;
+              data.val = getNextValue(data.index++);
+            }
+            bits |= (resb>0 ? 1 : 0) * power;
+            power <<= 1;
+          }
+    
+          switch (c = bits) {
+            case 0:
+              bits = 0;
+              maxpower = Math.pow(2,8);
+              power=1;
+              while (power!=maxpower) {
+                resb = data.val & data.position;
+                data.position >>= 1;
+                if (data.position == 0) {
+                  data.position = resetValue;
+                  data.val = getNextValue(data.index++);
+                }
+                bits |= (resb>0 ? 1 : 0) * power;
+                power <<= 1;
+              }
+    
+              dictionary[dictSize++] = f(bits);
+              c = dictSize-1;
+              enlargeIn--;
+              break;
+            case 1:
+              bits = 0;
+              maxpower = Math.pow(2,16);
+              power=1;
+              while (power!=maxpower) {
+                resb = data.val & data.position;
+                data.position >>= 1;
+                if (data.position == 0) {
+                  data.position = resetValue;
+                  data.val = getNextValue(data.index++);
+                }
+                bits |= (resb>0 ? 1 : 0) * power;
+                power <<= 1;
+              }
+              dictionary[dictSize++] = f(bits);
+              c = dictSize-1;
+              enlargeIn--;
+              break;
+            case 2:
+              return result.join('');
+          }
+    
+          if (enlargeIn == 0) {
+            enlargeIn = Math.pow(2, numBits);
+            numBits++;
+          }
+    
+          if (dictionary[c]) {
+            entry = dictionary[c];
+          } else {
+            if (c === dictSize) {
+              entry = w + w.charAt(0);
+            } else {
+              return null;
+            }
+          }
+          result.push(entry);
+    
+          // Add w+entry[0] to the dictionary.
+          dictionary[dictSize++] = w + entry.charAt(0);
+          enlargeIn--;
+    
+          w = entry;
+    
+          if (enlargeIn == 0) {
+            enlargeIn = Math.pow(2, numBits);
+            numBits++;
+          }
+    
+        }
       }
+    };
+      return LZString;
+    })();
+    
+    if (typeof define === 'function' && define.amd) {
+      define(function () { return LZString; });
+    } else if( typeof module !== 'undefined' && module != null ) {
+      module.exports = LZString
+    } else if( typeof angular !== 'undefined' && angular != null ) {
+      angular.module('LZString', [])
+      .factory('LZString', function () {
+        return LZString;
+      });
     }
-  });
-
-  return result;
-};
-
-/**
- * Checks whether the last number in the source string is a [萬万億亿], or
- * another number. Ignores non-number characters at the end of the string
- * such as dots, letters etc.
- * @param {string} str
- * @returns {string} The maan-like character if the last Chinese number character
- * in the string is any of the characters 萬万億亿, or null if the last
- * number in the string is Arabic or a Chinese number other than the four
- * above.
- */
-ChineseNumber.prototype.sourceStringEndsWithAfterManNumber = function (str) {
-  if (!str) {
-    return str;
-  }
-
-  // Split string into characters, reverse order:
-  let characters = str.split('').reverse();
-
-  for (let character of characters) {
-    if (character.match(SINGLE_ARABIC_NUMBER_REGEX)) {
-      // If the string ends with an Arabic number, that's a no. It definitely
-      // doesn't end up with a maan-like character.
-      // return null;
-    }
-
-    if (ChineseNumber.afterManMultipliers.includes(character)) {
-      // We found it - the string ends with a maan-like character:
-      return character;
-    }
-
-    if (ChineseNumber.characters.includes(character)) {
-      // We found a non-maan-like character, like 九:
-      // return null;
-    }
-
-    // Otherwise keep looping
-  }
-
-  // Fallback case:
-  return null;
-}
-
-module.exports = ChineseNumber;
 },{}]},{},[26])(26)
 });
