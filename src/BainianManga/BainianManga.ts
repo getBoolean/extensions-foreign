@@ -92,9 +92,9 @@ import {
         })
 
         const response = await this.requestManager.schedule(request, 1)
-        // const $ = this.cheerio.load(response.data)
+        const $ = this.cheerio.load(response.data)
 
-        return parseChapterDetails(this.imageDomain, mangaId, chapterId, response.data)
+        return parseChapterDetails($, mangaId, chapterId, response.data)
     }
   
 

@@ -73,15 +73,17 @@ export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
 }
 
 
-export const parseChapterDetails = (imageDomain: string, mangaId: string, chapterId: string, data: any): ChapterDetails => {
-    const baseImageURL = imageDomain
-    const imageCode = data?.match(/var z_img='(.*?)';/)?.pop()
-    // console.log("data?.match(/var z_img='(.*?)';/): " + data?.match(/var z_img='(.*?)';/))
-    // console.log('imageCode: ' + imageCode)
+export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId: string, data: any): ChapterDetails => {
+    const json = $('[type=application\\/ld\\+json]').html()?.replace(/\t*\n*/g, '') ?? '';
+    const parsedJson = JSON.parse(json)
+    const firstImageUrl = parsedJson.images[0];
+    const baseUrlStartingPosition : number = firstImageUrl.indexOf('//') + 2;
+    const baseImageURL = firstImageUrl.slice(0, firstImageUrl.indexOf('/', baseUrlStartingPosition));
+    const imageCodes = data?.match(/var z_img='(.*?)';/)?.pop();
 
     let pages : string[] = []
-    if (imageCode) {
-        const imagePaths = JSON.parse(imageCode) as string[]
+    if (imageCodes) {
+        const imagePaths = JSON.parse(imageCodes) as string[]
         pages = imagePaths.map(imagePath => `${baseImageURL}/${imagePath}`)
     }
     // console.log(pages)
