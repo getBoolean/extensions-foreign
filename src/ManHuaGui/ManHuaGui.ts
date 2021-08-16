@@ -42,7 +42,7 @@ import {
     ]
   }
   
-  export class BainianManga extends Source {
+  export class ManHuaGui extends Source {
     getMangaShareUrl(mangaId: string): string | null { return `${BG_DOMAIN}/comic/${mangaId}` }
   
     async getMangaDetails(mangaId: string): Promise<Manga> {
@@ -56,9 +56,7 @@ import {
         const $ = this.cheerio.load(response.data)
 
         // TODO: Add option to use Chinese titles when available
-        let result : [Manga, string] = parseMangaDetails($, mangaId)
-
-        return result[0]
+        return parseMangaDetails($, mangaId)
     }
   
 

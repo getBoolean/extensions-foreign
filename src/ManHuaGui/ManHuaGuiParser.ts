@@ -2,7 +2,7 @@ import { Chapter, ChapterDetails, HomeSection, LanguageCode, Manga, MangaStatus,
 
 const ChineseNumber = require('./external/chinese-numbers.js');
 
-export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, string] => {
+export const parseMangaDetails = ($: CheerioStatic, mangaId: string): Manga => {
     const page = $('div.w998.bc.cf') ?? '';
     const infoBox = $('div.book-cont', page);
     const chineseTitle : string = $('div.book-title h2', infoBox).text();
@@ -46,7 +46,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
 
     const summary = $('div#intro-all').text().trim();
 
-    return [createManga({
+    return createManga({
         id: mangaId,
         titles,
         image,
@@ -60,7 +60,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
         lastUpdate,
         desc: summary,
         hentai
-    }), image]
+    });
 }
 
 
