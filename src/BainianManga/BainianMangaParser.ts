@@ -7,7 +7,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
     const parsedJson = JSON.parse(json)
 
     const infoElement = $('div.data')
-    const title : string = parsedJson.title
+    const title : string = parsedJson.title.replace('漫画免费阅读全集-百年漫画', '')
     const image : string = parsedJson.images[0]
     let author = $('.dir', infoElement).text().trim().replace('作者：', '')
     let artist = ''
@@ -73,15 +73,17 @@ export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
 }
 
 
-export const parseChapterDetails = (imageDomain: string, mangaId: string, chapterId: string, data: any): ChapterDetails => {
-    const baseImageURL = imageDomain
-    const imageCode = data?.match(/var z_img='(.*?)';/)?.pop()
-    // console.log("data?.match(/var z_img='(.*?)';/): " + data?.match(/var z_img='(.*?)';/))
-    // console.log('imageCode: ' + imageCode)
+export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId: string, data: any): ChapterDetails => {
+    const json = $('[type=application\\/ld\\+json]').html()?.replace(/\t*\n*/g, '') ?? '';
+    const parsedJson = JSON.parse(json)
+    const firstImageUrl = parsedJson.images[0];
+    const baseUrlStartingPosition : number = firstImageUrl.indexOf('//') + 2;
+    const baseImageURL = firstImageUrl.slice(0, firstImageUrl.indexOf('/', baseUrlStartingPosition));
+    const imageCodes = data?.match(/var z_img='(.*?)';/)?.pop();
 
     let pages : string[] = []
-    if (imageCode) {
-        const imagePaths = JSON.parse(imageCode) as string[]
+    if (imageCodes) {
+        const imagePaths = JSON.parse(imageCodes) as string[]
         pages = imagePaths.map(imagePath => `${baseImageURL}/${imagePath}`)
     }
     // console.log(pages)
@@ -238,7 +240,6 @@ export const parseTags = ($: CheerioStatic): TagSection[] | null => {
         tags: []
     })
     for (let item of allItems) {
-        // let id = ($(item).attr('href')?.split('/').pop() ?? '').replace('.html', '')
         let label = $(item).text()
         genres.tags.push(createTag({ id: label, label: label }))
     }
@@ -247,7 +248,7 @@ export const parseTags = ($: CheerioStatic): TagSection[] | null => {
 
 
 export const parseViewMore = ($: CheerioStatic): MangaTile[] => {
-    // console.log('parseViewMore($)')
+    console.log('parseViewMore($)')
     const panel = $('.tbox_m')
     const allItems = $('.vbox', panel).toArray()
     const manga: MangaTile[] = []
@@ -269,8 +270,6 @@ export const parseViewMore = ($: CheerioStatic): MangaTile[] => {
 
 
 export const isLastPage = ($: CheerioStatic): boolean => {
-    // const pagenav = $('.pagination')
-    let disabled = $('li', $('.pagination')).last().hasClass('disabled')
-
-    return disabled
+    // see if the button is disabled
+    return $('li', $('.pagination')).last().hasClass('disabled');
 }
