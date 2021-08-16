@@ -335,7 +335,7 @@ var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, ge
     });
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.BainianManga = exports.ManHuaGuiInfo = void 0;
+exports.ManHuaGui = exports.ManHuaGuiInfo = void 0;
 const paperback_extensions_common_1 = require("paperback-extensions-common");
 const ManHuaGuiParser_1 = require("./ManHuaGuiParser");
 const BG_DOMAIN = 'https://www.manhuagui.com';
@@ -364,7 +364,7 @@ exports.ManHuaGuiInfo = {
         }
     ]
 };
-class BainianManga extends paperback_extensions_common_1.Source {
+class ManHuaGui extends paperback_extensions_common_1.Source {
     getMangaShareUrl(mangaId) { return `${BG_DOMAIN}/comic/${mangaId}`; }
     getMangaDetails(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
@@ -376,8 +376,7 @@ class BainianManga extends paperback_extensions_common_1.Source {
             const response = yield this.requestManager.schedule(request, 1);
             const $ = this.cheerio.load(response.data);
             // TODO: Add option to use Chinese titles when available
-            let result = ManHuaGuiParser_1.parseMangaDetails($, mangaId);
-            return result[0];
+            return ManHuaGuiParser_1.parseMangaDetails($, mangaId);
         });
     }
     getChapters(mangaId) {
@@ -560,7 +559,7 @@ class BainianManga extends paperback_extensions_common_1.Source {
         };
     }
 }
-exports.BainianManga = BainianManga;
+exports.ManHuaGui = ManHuaGui;
 
 },{"./ManHuaGuiParser":27,"paperback-extensions-common":4}],27:[function(require,module,exports){
 "use strict";
@@ -609,21 +608,21 @@ const parseMangaDetails = ($, mangaId) => {
     const time = new Date(lastUpdate);
     lastUpdate = time.toDateString();
     const summary = $('div#intro-all').text().trim();
-    return [createManga({
-            id: mangaId,
-            titles,
-            image,
-            rating: Number(rating),
-            status,
-            artist,
-            author,
-            tags: tagSections,
-            views,
-            follows,
-            lastUpdate,
-            desc: summary,
-            hentai
-        }), image];
+    return createManga({
+        id: mangaId,
+        titles,
+        image,
+        rating: Number(rating),
+        status,
+        artist,
+        author,
+        tags: tagSections,
+        views,
+        follows,
+        lastUpdate,
+        desc: summary,
+        hentai
+    });
 };
 exports.parseMangaDetails = parseMangaDetails;
 const parseChapters = ($, mangaId) => {
