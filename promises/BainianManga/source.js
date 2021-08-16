@@ -411,8 +411,8 @@ class BainianManga extends paperback_extensions_common_1.Source {
                 param: `${mangaId}/${chapterId}.html`
             });
             const response = yield this.requestManager.schedule(request, 1);
-            // const $ = this.cheerio.load(response.data)
-            return BainianMangaParser_1.parseChapterDetails(this.imageDomain, mangaId, chapterId, response.data);
+            const $ = this.cheerio.load(response.data);
+            return BainianMangaParser_1.parseChapterDetails($, mangaId, chapterId, response.data);
         });
     }
     filterUpdatedManga(mangaUpdatesFoundCallback, time, ids) {
@@ -641,15 +641,17 @@ const parseChapters = ($, mangaId) => {
     return chapters;
 };
 exports.parseChapters = parseChapters;
-const parseChapterDetails = (imageDomain, mangaId, chapterId, data) => {
-    var _a;
-    const baseImageURL = imageDomain;
-    const imageCode = (_a = data === null || data === void 0 ? void 0 : data.match(/var z_img='(.*?)';/)) === null || _a === void 0 ? void 0 : _a.pop();
-    // console.log("data?.match(/var z_img='(.*?)';/): " + data?.match(/var z_img='(.*?)';/))
-    // console.log('imageCode: ' + imageCode)
+const parseChapterDetails = ($, mangaId, chapterId, data) => {
+    var _a, _b, _c;
+    const json = (_b = (_a = $('[type=application\\/ld\\+json]').html()) === null || _a === void 0 ? void 0 : _a.replace(/\t*\n*/g, '')) !== null && _b !== void 0 ? _b : '';
+    const parsedJson = JSON.parse(json);
+    const firstImageUrl = parsedJson.images[0];
+    const baseUrlStartingPosition = firstImageUrl.indexOf('//') + 2;
+    const baseImageURL = firstImageUrl.slice(0, firstImageUrl.indexOf('/', baseUrlStartingPosition));
+    const imageCodes = (_c = data === null || data === void 0 ? void 0 : data.match(/var z_img='(.*?)';/)) === null || _c === void 0 ? void 0 : _c.pop();
     let pages = [];
-    if (imageCode) {
-        const imagePaths = JSON.parse(imageCode);
+    if (imageCodes) {
+        const imagePaths = JSON.parse(imageCodes);
         pages = imagePaths.map(imagePath => `${baseImageURL}/${imagePath}`);
     }
     // console.log(pages)
