@@ -1,6 +1,8 @@
 import { Chapter, ChapterDetails, HomeSection, LanguageCode, Manga, MangaStatus, MangaTile, MangaUpdates, PagedResults, SearchRequest, TagSection } from "paperback-extensions-common";
 
-const ChineseNumber = require('./external/chinese-numbers.js');
+// TODO: Remove before publishing
+// const ChineseNumber = require('./external/chinese-numbers.js');
+const LZString = require('./external/lz-string.js');
 
 export const parseMangaDetails = ($: CheerioStatic, mangaId: string): Manga => {
     const page = $('div.w998.bc.cf') ?? '';
@@ -62,25 +64,32 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): Manga => {
 }
 
 
-export const parseChapters = ($: CheerioStatic, mangaId: string): Chapter[] => {
+export const parseChapters = (cheerio : CheerioAPI, $: CheerioStatic, mangaId: string): Chapter[] => {
     const page = $('div.w998.bc.cf') ?? '';
 
+
+    // Try to get R18 manga hidden chapter list
+    // Credit to tachiyomi for this impl
+    // https://github.com/tachiyomiorg/tachiyomi-extensions/blob/master/src/zh/manhuagui/src/eu/kanade/tachiyomi/extension/zh/manhuagui/Manhuagui.kt
+    const hiddenEncryptedChapterList = $("#__VIEWSTATE");
+    if (hiddenEncryptedChapterList != null) {
+        // Hidden chapter list is LZString encoded
+        const encryptedValue : string = $(hiddenEncryptedChapterList).attr('value') ?? '';
+        const decodedHiddenChapterList = LZString.decompressFromBase64(encryptedValue);
+        $('#erroraudit_show', page).replaceWith(decodedHiddenChapterList)
+
+    }
+    
     const chapterList = $("ul > li > a.status0");
     const allChapters = chapterList.toArray()
     const chapters: Chapter[] = [];
 
-    // Try to get R18 manga hidden chapter list
-    // let hiddenEncryptedChapterList = $("#__VIEWSTATE");
-    // if (hiddenEncryptedChapterList != null) {
-    //     // Hidden chapter list is LZString encoded
-
-    // }
-    
     for (let chapter of allChapters) {
         const id: string = ( $(chapter).attr("href")?.split('/').pop() ?? '' ).replace('.html', '')
         const name: string = $(chapter).attr("title")?.trim() ?? ''
-        const convertedString = new ChineseNumber(name).toArabicString();
-        const chapNum: number = Number(convertedString.match(/\d+/) ?? 0 )
+        // Commented out since I haven't found any cases of chapter numbers written with chinese characters
+        // const convertedString = new ChineseNumber(name).toArabicString();
+        const chapNum: number = Number(name.match(/\d+/) ?? 0 )
         // Manhuagui only provides upload date for latest chapter
         const timeText : string = $('li.status span span:nth-child(3)', page).text()
         const time = new Date(timeText)

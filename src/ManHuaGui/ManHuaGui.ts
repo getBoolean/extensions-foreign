@@ -68,7 +68,7 @@ import {
 
         const response = await this.requestManager.schedule(request, 1)
         const $ = this.cheerio.load(response.data)
-        return parseChapters($, mangaId)
+        return parseChapters(this.cheerio, $, mangaId)
     }
   
 
