@@ -17,8 +17,11 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
     let artist = ''
     let rating = $('p.score-avg em', page).text()
 
-    // 连载中: Currently serializing
-    // 已完结: Finished
+    // "连载中" -> ONGOING
+    // "已完结" -> COMPLETED
+    // "連載中" -> ONGOING
+    // "已完結" -> COMPLETED
+    // TODO: Add traditional chinese versions of text
     let status = $('li.status span span', bookDetails).first().text() == '连载中' ? MangaStatus.ONGOING : MangaStatus.COMPLETED
     let titles = isChineseTitleEmpty ? [title] : [title, altTitle];
     let follows = 0
@@ -35,7 +38,7 @@ export const parseMangaDetails = ($: CheerioStatic, mangaId: string): [Manga, st
     const time = new Date(lastUpdate)
     lastUpdate = time.toDateString()
 
-    const summary = $('div.book-intro div[id="intro-all"] p', page).text()
+    const summary = $('div#intro-all').text().trim();
 
     return [createManga({
         id: mangaId,
