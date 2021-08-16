@@ -382,9 +382,9 @@ class ManHuaGui extends paperback_extensions_common_1.Source {
     getChapters(mangaId) {
         return __awaiter(this, void 0, void 0, function* () {
             const request = createRequestObject({
-                url: `${BM_DOMAIN}/comic/`,
+                url: `${BG_DOMAIN}/comic/`,
                 method,
-                param: `${mangaId}.html`
+                param: `${mangaId}/`
             });
             const response = yield this.requestManager.schedule(request, 1);
             const $ = this.cheerio.load(response.data);
@@ -555,7 +555,7 @@ class ManHuaGui extends paperback_extensions_common_1.Source {
     }
     globalRequestHeaders() {
         return {
-            referer: BM_DOMAIN
+            referer: BG_DOMAIN
         };
     }
 }
@@ -627,16 +627,18 @@ const parseMangaDetails = ($, mangaId) => {
 exports.parseMangaDetails = parseMangaDetails;
 const parseChapters = ($, mangaId) => {
     var _a, _b, _c, _d, _e, _f;
-    const json = (_b = (_a = $('[type=application\\/ld\\+json]').html()) === null || _a === void 0 ? void 0 : _a.replace(/\t*\n*/g, '')) !== null && _b !== void 0 ? _b : '';
-    const parsedJson = JSON.parse(json);
-    const time = new Date(parsedJson.upDate); // Set time for all chapters to be the last updated time
-    const allChapters = $('li', '.list_block ').toArray();
+    const page = (_a = $('div.w998.bc.cf')) !== null && _a !== void 0 ? _a : '';
+    const chapterList = $("ul > li > a.status0");
+    const allChapters = chapterList.toArray();
     const chapters = [];
     for (let chapter of allChapters) {
-        const id = ((_d = (_c = $('a', chapter).attr('href')) === null || _c === void 0 ? void 0 : _c.split('/').pop()) !== null && _d !== void 0 ? _d : '').replace('.html', '');
-        const name = (_e = $('a', chapter).text()) !== null && _e !== void 0 ? _e : '';
+        const id = ((_c = (_b = $(chapter).attr("href")) === null || _b === void 0 ? void 0 : _b.split('/').pop()) !== null && _c !== void 0 ? _c : '').replace('.html', '');
+        const name = (_e = (_d = $(chapter).attr("title")) === null || _d === void 0 ? void 0 : _d.trim()) !== null && _e !== void 0 ? _e : '';
         const convertedString = new ChineseNumber(name).toArabicString();
         const chapNum = Number((_f = convertedString.match(/\d+/)) !== null && _f !== void 0 ? _f : 0);
+        // Manhuagui only provides upload date for latest chapter
+        const timeText = $('li.status span span:nth-child(3)', page).text();
+        const time = new Date(timeText);
         chapters.push(createChapter({
             id,
             mangaId,
