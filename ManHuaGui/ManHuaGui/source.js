@@ -582,8 +582,11 @@ const parseMangaDetails = ($, mangaId) => {
     let author = (_c = $('li:nth-child(2) span:nth-child(2) a', bookDetails).attr('title')) !== null && _c !== void 0 ? _c : '';
     let artist = '';
     let rating = $('p.score-avg em', page).text();
-    // 连载中: Currently serializing
-    // 已完结: Finished
+    // "连载中" -> ONGOING
+    // "已完结" -> COMPLETED
+    // "連載中" -> ONGOING
+    // "已完結" -> COMPLETED
+    // TODO: Add traditional chinese versions of text
     let status = $('li.status span span', bookDetails).first().text() == '连载中' ? paperback_extensions_common_1.MangaStatus.ONGOING : paperback_extensions_common_1.MangaStatus.COMPLETED;
     let titles = isChineseTitleEmpty ? [title] : [title, altTitle];
     let follows = 0;
@@ -596,7 +599,7 @@ const parseMangaDetails = ($, mangaId) => {
     tagSections[0].tags = elems.map((elem) => createTag({ id: $(elem).text(), label: $(elem).text() }));
     const time = new Date(lastUpdate);
     lastUpdate = time.toDateString();
-    const summary = $('div.book-intro div[id="intro-all"] p', page).text();
+    const summary = $('div#intro-all').text().trim();
     return [createManga({
             id: mangaId,
             titles,
