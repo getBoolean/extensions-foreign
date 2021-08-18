@@ -340,6 +340,7 @@ const paperback_extensions_common_1 = require("paperback-extensions-common");
 const ManHuaGuiParser_1 = require("./ManHuaGuiParser");
 const BG_DOMAIN = 'https://www.manhuagui.com';
 // TODO: Support option to switch to traditional
+// TODO: Support option to turn on or off R18 manga
 const method = 'GET';
 const headers = {
     referer: BG_DOMAIN
@@ -662,8 +663,18 @@ const parseChapters = (cheerio, $, mangaId) => {
     return chapters;
 };
 exports.parseChapters = parseChapters;
+// Credit to tachi for the decoding
+// Chapter details is javascript eval encoded and LZString encoded, these website:
+// http://www.oicqzone.com/tool/eval/ , https://www.w3xue.com/tools/jseval/ ,
+// https://www.w3cschool.cn/tools/index?name=evalencode can try to decode javascript eval encoded content,
 const parseChapterDetails = ($, mangaId, chapterId, data) => {
     var _a, _b, _c;
+    const re = RegExp(/window\[\".*?\"\](\(.*\)\s*\{[\s\S]+\}\s*\(.*\))/);
+    const re2 = RegExp(/\{.*\}/);
+    const scriptRegExpMatchArray = $('script[type="text/javascript"]').text().match(re);
+    scriptRegExpMatchArray[1];
+    var func = new Function(imgCode);
+    const imgDecode = LZString.decompressFromBase64(imgCode);
     const json = (_b = (_a = $('[type=application\\/ld\\+json]').html()) === null || _a === void 0 ? void 0 : _a.replace(/\t*\n*/g, '')) !== null && _b !== void 0 ? _b : '';
     const parsedJson = JSON.parse(json);
     const firstImageUrl = parsedJson.images[0];
