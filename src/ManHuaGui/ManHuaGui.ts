@@ -16,6 +16,7 @@ import {
   
   const BG_DOMAIN = 'https://www.manhuagui.com';
   // TODO: Support option to switch to traditional
+  // TODO: Support option to turn on or off R18 manga
   const method = 'GET';
   const headers = {
       referer: BG_DOMAIN

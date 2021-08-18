@@ -106,8 +106,21 @@ export const parseChapters = (cheerio : CheerioAPI, $: CheerioStatic, mangaId: s
     return chapters
 }
 
-
+// Credit to tachi for the decoding
+// Chapter details is javascript eval encoded and LZString encoded, these website:
+// http://www.oicqzone.com/tool/eval/ , https://www.w3xue.com/tools/jseval/ ,
+// https://www.w3cschool.cn/tools/index?name=evalencode can try to decode javascript eval encoded content,
 export const parseChapterDetails = ($: CheerioStatic, mangaId: string, chapterId: string, data: any): ChapterDetails => {
+    const re = RegExp(/window\[\".*?\"\](\(.*\)\s*\{[\s\S]+\}\s*\(.*\))/);
+    const re2 = RegExp(/\{.*\}/);
+    
+    const scriptRegExpMatchArray = $('script[type="text/javascript"]').text().match(re);
+    scriptRegExpMatchArray[1]
+
+    var func = new Function(imgCode)
+    const imgDecode = LZString.decompressFromBase64(imgCode);
+
+
     const json = $('[type=application\\/ld\\+json]').html()?.replace(/\t*\n*/g, '') ?? '';
     const parsedJson = JSON.parse(json)
     const firstImageUrl = parsedJson.images[0];
